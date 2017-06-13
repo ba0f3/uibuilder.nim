@@ -1,2 +1,2 @@
-# glade.nim
-UI Designer for @nim-lang/ui
+# uibuilder.nim
+UI Builder for @nim-lang/ui
