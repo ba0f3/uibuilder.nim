@@ -1,29 +1,6 @@
 import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs
 
-import private/[window, box]
-
-discard """
-type
-  WidgetKind = enum
-    Button,
-    Window,
-    Box,
-    Checkbox,
-    Entry,
-    Label,
-    Tab,
-    Group,
-    Spinbox,
-    Slider,
-    ProgressBar,
-    Separator,
-    Combobox,
-    EditableCombobox,
-    RadioButtons,
-    MutilineEntry,
-    MenuItem,
-    Menu
-"""
+import private/[helpers, types]
 
 
 type
@@ -39,31 +16,35 @@ proc newBuilder*(): BuilderRef =
   result.widgets = @[]
 
 
-proc build(node: XmlNode): Widget =
+
+proc build(builder: BuilderRef, node: XmlNode): Widget =
   if node.tag != "object":
     raise newException(IOError, "input node is not an object")
 
-  var
-    id = node.attr("id")
-    props = newStringTable(modeCaseInsensitive)
-    children: seq[Widget] = @[]
+  var widget = initUiWidget()
 
   for child in node.items():
     case child.tag
     of "property":
-      props[child.attr("name")] = child.innerText
+      widget.props[child.attr("name")] = child.innerText
     of "child":
       for n in child.items:
         if n.tag == "object":
-          children.add build(n)
+          var c = builder.build(n)
+          addChild(result, c)
     else:
       discard
 
+  echo "Building ", node.attr("class")
   case node.attr("class")
   of "GtkWindow":
-    result = makeWindow(props, children)
+    result = makeWindow(widget)
   of "GtkBox":
-    result = makeBox(props, children)
+    result = makeBox(widget)
+  else: discard
+
+  if node.attr("id") != "":
+    builder.idMap[node.attr("id")] = result
 
 
 proc load*(builder: BuilderRef, path: string) =
@@ -73,4 +54,4 @@ proc load*(builder: BuilderRef, path: string) =
 
   for node in root.items:
     if node.tag == "object":
-       builder.widgets.add build(node)
+       builder.widgets.add builder.build(node)
