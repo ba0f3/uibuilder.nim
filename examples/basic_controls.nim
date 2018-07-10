@@ -1,4 +1,4 @@
-import ../../ui/ui, ../uibuilder
+import ui, ../uibuilder
 
 
 var builder = newBuilder()

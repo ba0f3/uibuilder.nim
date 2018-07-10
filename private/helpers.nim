@@ -1,4 +1,4 @@
-import ui, strutils, strtabs, types
+import ui, strutils, strtabs, types, xmltree, q
 
 proc initUiWidget*(): UiWidget =
   result.props = newStringTable(modeCaseInsensitive)
@@ -19,11 +19,11 @@ template addChild*(p, c: Widget) =
   elif p is Box:
     p.add c
   else:
-    raise newException(KeyError, "not supported yet")
+    #raise newException(KeyError, "not supported yet")
+    discard
 
 
 proc makeWindow(w: UiWidget): Window =
-  var result: Window
   var
     title = ""
     width = 640
@@ -38,10 +38,12 @@ proc makeWindow(w: UiWidget): Window =
   if w.props.hasKey("default_height"):
     height = parseInt(w.props["default_height"])
 
-  result = newWindow(title, width, height, false)
+  result = newWindow(title, width, height, true)
+  result.margined = true
+  result.onClosing = (proc (): bool = return true)
   if w.children.len > 0:
     makeChild(result, w.children[0])
-
+  show(result)
 
 proc makeBox(w: UiWidget): Box =
   var
@@ -55,3 +57,8 @@ proc makeBox(w: UiWidget): Box =
   if w.children != nil:
     for child in w.children:
       makeChild(result, child)
+
+proc getProperties*(node: XmlNode): StringTableRef =
+  result = newStringTable(modeCaseInsensitive)
+  for prop in node.select("> property"):
+    result[prop.attr("name")] = prop.innerText
