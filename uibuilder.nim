@@ -14,37 +14,28 @@ proc newBuilder*(): Builder =
   result.ids = newTable[string, Widget]()
   result.hasMenuBar = false
 
-proc build(builder: Builder, node: XmlNode): Widget =
+proc build(builder: Builder, node: XmlNode, parent: var Widget) =
   if node.tag != "object":
     raise newException(IOError, "input node is not an object")
 
-  var props = node.getProperties()
-  var widget = initUiWidget()
+  var
+    props = node.getProperties()
+    children = node.select("child > object")
 
   echo "Building ", node.attr("class")
   case node.attr("class")
   of "GtkWindow":
-    result = makeWindow(builder.hasMenuBar, props)
+    var window = makeWindow(builder.hasMenuBar, props)
+    for child in children:
+      window.setChild builder.build(child)
   of "GtkBox":
-    result = makeBox(widget)
+    makeBox(p, props)
   of "GtkFrame":
-    result = makeGroup(widget)
+    makeGroup(props)
   else: discard
 
-  if node.attr("id") != "":
-    builder.ids[node.attr("id")] = result
-
-  for child in node.items():
-    case child.tag
-    of "property":
-      widget.props[child.attr("name")] = child.innerText
-    of "child":
-      for n in child.items:
-        if n.tag == "object":
-          var c = builder.build(n)
-          result.addChild(c)
-    else:
-      discard
+  if node.attr("id").len > 0:
+    builder.ids[node.attr("id")] = widget
 
 proc makeMenu(menuBar: XmlNode) =
   var
@@ -82,17 +73,15 @@ proc load*(builder: Builder, path: string) =
   if root.tag != "interface":
     raise newException(IOError, "invalid glade file")
 
-  #var menu = newMenu("File")
-  #menu.addQuitItem(proc(): bool {.closure.} = return true)
-
   # search for GtkMenuBar and init it first
   for node in root.items:
     if node.tag == "object" and node.attr("class") == "GtkMenuBar":
       builder.hasMenuBar = true
       makeMenu(node)
 
+  var rootWidget: Widget
   for node in root.items:
     if node.tag == "object" and node.attr("class") != "GtkMenuBar":
-       discard builder.build(node)
+       builder.build(node, rootWidget)
 
   mainLoop()

@@ -1,24 +1,11 @@
 import ui, strutils, strtabs, types, xmltree, q
 
-proc initUiWidget*(): UiWidget =
-  result.props = newStringTable(modeCaseInsensitive)
-  result.children = @[]
-
-#proc makeWindow*(w: UiWidget): Window
-#proc makeBox*(w: UiWidget): Box
-
-#template makeChild*(p: Widget, w: UiWidget) =
-#  when p is Window:
-#    p.setChild makeWindow(w)
-#  when p is Box:
-#    p.add makeBox(w)
-
-template addChild*(p, c: Widget) =
-  when p is Window:
-    p.setChild(c)
-  elif p is Box:
+proc addChild*[SomeWidget: Widget](p: SomeWidget, c: SomeWidget) =
+  if p of Window:
+    ((Window)p).setChild(c)
+  elif p of Box:
     p.add(c)
-  elif p is Group:
+  elif p of Group:
     p.groupSetChild(c)
   else:
     #raise newException(KeyError, "not supported yet")
@@ -39,24 +26,21 @@ proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
   result = newWindow(props.getOrDefault("name", "Window"), width, height, hasMenuBar)
   result.margined = true
   result.onClosing = (proc (): bool = return true)
-  #if w.children.len > 0:
-  #  makeChild(result, w.children[0])
   show(result)
 
-proc makeBox*(w: UiWidget): Box =
+proc makeBox*[SomeWidget: Widget](parent: var SomeWidget, props: StringTableRef) =
   var
     padded = false
-
-  if w.props.hasKey("orientation") and w.props["orientation"] != "vertical":
-    result = newHorizontalBox(padded)
+    box: Box
+  
+  if props.hasKey("orientation") and props["orientation"] != "vertical":
+    box = newHorizontalBox(padded)
   else:
-    result = newVerticalBox(padded)
+    box = newVerticalBox(padded)
 
-  #if w.children != nil:
-  #  for child in w.children:
-  #    makeChild(result, child)
+  parent.addChild(box)
 
-proc makeGroup*(w: UiWidget): Group =
+proc makeGroup*(props: StringTableRef): Group =
   result = newGroup("Basic Controls", true)
 
 proc getProperties*(node: XmlNode): StringTableRef =

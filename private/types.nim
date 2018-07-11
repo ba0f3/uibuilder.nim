@@ -23,6 +23,4 @@ type
 
   UiWidget* = object
     kind*: WidgetKind
-    id*: string
-    props*: StringTableRef
-    children*: seq[UiWidget]
+    widget*: Widget
