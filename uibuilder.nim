@@ -18,12 +18,13 @@ proc build(builder: Builder, node: XmlNode): Widget =
   if node.tag != "object":
     raise newException(IOError, "input node is not an object")
 
+  var props = node.getProperties()
   var widget = initUiWidget()
 
   echo "Building ", node.attr("class")
   case node.attr("class")
   of "GtkWindow":
-    result = makeWindow(widget)
+    result = makeWindow(builder.hasMenuBar, props)
   of "GtkBox":
     result = makeBox(widget)
   of "GtkFrame":
@@ -41,7 +42,7 @@ proc build(builder: Builder, node: XmlNode): Widget =
       for n in child.items:
         if n.tag == "object":
           var c = builder.build(n)
-          addChild(result, c)
+          result.addChild(c)
     else:
       discard
 
@@ -72,9 +73,6 @@ proc makeMenu(menuBar: XmlNode) =
       # what is the property for disabled menu item??
       #if properties.getOrDefault("can_focus", "True") != "True":
       #   menuItem.disable()
-
-
-
 
 
 

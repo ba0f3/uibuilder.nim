@@ -4,20 +4,20 @@ proc initUiWidget*(): UiWidget =
   result.props = newStringTable(modeCaseInsensitive)
   result.children = @[]
 
-proc makeWindow*(w: UiWidget): Window
-proc makeBox*(w: UiWidget): Box
+#proc makeWindow*(w: UiWidget): Window
+#proc makeBox*(w: UiWidget): Box
 
-template makeChild*(p: Widget, w: UiWidget) =
-  when p is Window:
-    p.setChild makeWindow(w)
-  when p is Box:
-    p.add makeBox(w)
+#template makeChild*(p: Widget, w: UiWidget) =
+#  when p is Window:
+#    p.setChild makeWindow(w)
+#  when p is Box:
+#    p.add makeBox(w)
 
 template addChild*(p, c: Widget) =
   when p is Window:
-    p.setChild c
+    p.setChild(c)
   elif p is Box:
-    p.boxAppend(c)
+    p.add(c)
   elif p is Group:
     p.groupSetChild(c)
   else:
@@ -25,29 +25,25 @@ template addChild*(p, c: Widget) =
     discard
 
 
-proc makeWindow(w: UiWidget): Window =
+proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
   var
-    title = ""
     width = 640
     height = 480
 
-  if w.props.hasKey("name"):
-    title = w.props["name"]
+  if props.hasKey("default_width"):
+    width = parseInt(props["default_width"])
 
-  if w.props.hasKey("default_width"):
-    width = parseInt(w.props["default_width"])
+  if props.hasKey("default_height"):
+    height = parseInt(props["default_height"])
 
-  if w.props.hasKey("default_height"):
-    height = parseInt(w.props["default_height"])
-
-  result = newWindow(title, width, height, true)
+  result = newWindow(props.getOrDefault("name", "Window"), width, height, hasMenuBar)
   result.margined = true
   result.onClosing = (proc (): bool = return true)
-  if w.children.len > 0:
-    makeChild(result, w.children[0])
+  #if w.children.len > 0:
+  #  makeChild(result, w.children[0])
   show(result)
 
-proc makeBox(w: UiWidget): Box =
+proc makeBox*(w: UiWidget): Box =
   var
     padded = false
 
@@ -56,9 +52,9 @@ proc makeBox(w: UiWidget): Box =
   else:
     result = newVerticalBox(padded)
 
-  if w.children != nil:
-    for child in w.children:
-      makeChild(result, child)
+  #if w.children != nil:
+  #  for child in w.children:
+  #    makeChild(result, child)
 
 proc makeGroup*(w: UiWidget): Group =
   result = newGroup("Basic Controls", true)
