@@ -20,6 +20,19 @@ proc build(builder: Builder, node: XmlNode): Widget =
 
   var widget = initUiWidget()
 
+  echo "Building ", node.attr("class")
+  case node.attr("class")
+  of "GtkWindow":
+    result = makeWindow(widget)
+  of "GtkBox":
+    result = makeBox(widget)
+  of "GtkFrame":
+    result = makeGroup(widget)
+  else: discard
+
+  if node.attr("id") != "":
+    builder.ids[node.attr("id")] = result
+
   for child in node.items():
     case child.tag
     of "property":
@@ -31,17 +44,6 @@ proc build(builder: Builder, node: XmlNode): Widget =
           addChild(result, c)
     else:
       discard
-
-  echo "Building ", node.attr("class")
-  case node.attr("class")
-  of "GtkWindow":
-    result = makeWindow(widget)
-  of "GtkBox":
-    result = makeBox(widget)
-  else: discard
-
-  if node.attr("id") != "":
-    builder.ids[node.attr("id")] = result
 
 proc makeMenu(menuBar: XmlNode) =
   var
@@ -63,7 +65,7 @@ proc makeMenu(menuBar: XmlNode) =
       of "GtkCheckMenuItem":
         menuItem = menu.addCheckItem(properties.getOrDefault("label", ""), proc() = discard)
       else:
-        {.warning: "MenuItem type is not supported yet".}
+        {.warning: "only GtkMenuItem and GtkCheckMenuItem is supported".}
 
       if properties.getOrDefault("visible", "True") != "True":
         menuItem.hide()

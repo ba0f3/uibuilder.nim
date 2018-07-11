@@ -17,7 +17,9 @@ template addChild*(p, c: Widget) =
   when p is Window:
     p.setChild c
   elif p is Box:
-    p.add c
+    p.boxAppend(c)
+  elif p is Group:
+    p.groupSetChild(c)
   else:
     #raise newException(KeyError, "not supported yet")
     discard
@@ -57,6 +59,9 @@ proc makeBox(w: UiWidget): Box =
   if w.children != nil:
     for child in w.children:
       makeChild(result, child)
+
+proc makeGroup*(w: UiWidget): Group =
+  result = newGroup("Basic Controls", true)
 
 proc getProperties*(node: XmlNode): StringTableRef =
   result = newStringTable(modeCaseInsensitive)
