@@ -1,14 +1,22 @@
 import ui, strutils, strtabs, types, xmltree, q
 
-proc addChild*[SomeWidget: Widget](p: SomeWidget, c: SomeWidget) =
+
+proc getProperties*(node: XmlNode): StringTableRef =
+  result = newStringTable(modeCaseInsensitive)
+  for prop in node.select("> property"):
+    result[prop.attr("name")] = prop.innerText
+
+
+proc addChild*[ParentWidget: Widget, ChildWidget: Widget](p: var ParentWidget, c: ChildWidget) =
   if p of Window:
     ((Window)p).setChild(c)
   elif p of Box:
-    p.add(c)
+    ((Box)p).add(c)
   elif p of Group:
-    p.groupSetChild(c)
+    ((Group)p).child = c
   else:
-    #raise newException(KeyError, "not supported yet")
+    #if c of Window:
+    #  p = c
     discard
 
 
@@ -28,22 +36,13 @@ proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
   result.onClosing = (proc (): bool = return true)
   show(result)
 
-proc makeBox*[SomeWidget: Widget](parent: var SomeWidget, props: StringTableRef) =
+proc makeBox*(props: StringTableRef): Box =
   var
     padded = false
-    box: Box
-  
   if props.hasKey("orientation") and props["orientation"] != "vertical":
-    box = newHorizontalBox(padded)
+    result = newHorizontalBox(padded)
   else:
-    box = newVerticalBox(padded)
-
-  parent.addChild(box)
+    result = newVerticalBox(padded)
 
 proc makeGroup*(props: StringTableRef): Group =
-  result = newGroup("Basic Controls", true)
-
-proc getProperties*(node: XmlNode): StringTableRef =
-  result = newStringTable(modeCaseInsensitive)
-  for prop in node.select("> property"):
-    result[prop.attr("name")] = prop.innerText
+  newGroup("Basic Controls", true)

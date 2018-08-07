@@ -14,7 +14,21 @@ proc newBuilder*(): Builder =
   result.ids = newTable[string, Widget]()
   result.hasMenuBar = false
 
-proc build(builder: Builder, node: XmlNode, parent: var Widget) =
+proc simplify(builder: Builder, node: XmlNode, level = 0) =
+  var
+    props = node.getProperties()
+
+  #case node.attr("class")
+  #of "GtkWindow":
+  #  children = node.select("child > object")
+  echo " ".repeat(level*2), node.attr("class")
+  var children = node.select("child > object")
+  for child in children:
+    builder.simplify(child, level+1)
+
+
+
+proc build[ParentWidget: Widget](builder: Builder, node: XmlNode, parent: var ParentWidget) =
   if node.tag != "object":
     raise newException(IOError, "input node is not an object")
 
@@ -23,16 +37,21 @@ proc build(builder: Builder, node: XmlNode, parent: var Widget) =
     children = node.select("child > object")
 
   echo "Building ", node.attr("class")
+  var widget: Widget
   case node.attr("class")
   of "GtkWindow":
-    var window = makeWindow(builder.hasMenuBar, props)
-    for child in children:
-      window.setChild builder.build(child)
+    widget = makeWindow(builder.hasMenuBar, props)
+    parent.addChild((Window)widget)
   of "GtkBox":
-    makeBox(p, props)
+    widget = makeBox(props)
+    parent.addChild((Box)widget)
   of "GtkFrame":
-    makeGroup(props)
+    widget = makeGroup(props)
+    parent.addChild((Group)widget)
   else: discard
+
+  for child in children:
+    builder.build(child, widget)
 
   if node.attr("id").len > 0:
     builder.ids[node.attr("id")] = widget
@@ -82,6 +101,7 @@ proc load*(builder: Builder, path: string) =
   var rootWidget: Widget
   for node in root.items:
     if node.tag == "object" and node.attr("class") != "GtkMenuBar":
-       builder.build(node, rootWidget)
+      builder.simplify(node)
+      #builder.build(node, rootWidget)
 
   mainLoop()
