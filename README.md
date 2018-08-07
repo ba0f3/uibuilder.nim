@@ -1,5 +1,6 @@
 # uibuilder.nim
-UI Builder for @nim-lang/ui
+UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](https://glade.gnome.org/)
+
 
 ### Whats working?
 > "working" means able to display on GUI, nothing else
