@@ -1,13 +1,12 @@
 import ui, strutils, strtabs, types, xmltree, q
 
-
 proc getProperties*(node: XmlNode): StringTableRef =
   result = newStringTable(modeCaseInsensitive)
   for prop in node.select("> property"):
     result[prop.attr("name")] = prop.innerText
 
 
-proc addChild*[ParentWidget: Widget, ChildWidget: Widget](p: var ParentWidget, c: ChildWidget) =
+proc addChild*[Parent: Widget, Child: Widget](p: Parent, c: Child) =
   if p of Window:
     ((Window)p).setChild(c)
   elif p of Box:
@@ -15,8 +14,6 @@ proc addChild*[ParentWidget: Widget, ChildWidget: Widget](p: var ParentWidget, c
   elif p of Group:
     ((Group)p).child = c
   else:
-    #if c of Window:
-    #  p = c
     discard
 
 
@@ -39,10 +36,13 @@ proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
 proc makeBox*(props: StringTableRef): Box =
   var
     padded = false
-  if props.hasKey("orientation") and props["orientation"] != "vertical":
-    result = newHorizontalBox(padded)
-  else:
+  if props.hasKey("orientation") and props["orientation"] == "vertical":
     result = newVerticalBox(padded)
+  else:
+    result = newHorizontalBox(padded)
 
-proc makeGroup*(props: StringTableRef): Group =
-  newGroup("Basic Controls", true)
+
+proc initUiWidget*(kind: WidgetKind, props: StringTableRef = nil): BuilderWidget =
+  result.kind = kind
+  result.props = props
+  result.children = @[]

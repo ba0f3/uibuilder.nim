@@ -1,7 +1,5 @@
 import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q
-
 import private/[helpers, types]
-
 
 type
   Builder = ref object of RootObj
@@ -14,47 +12,83 @@ proc newBuilder*(): Builder =
   result.ids = newTable[string, Widget]()
   result.hasMenuBar = false
 
-proc simplify(builder: Builder, node: XmlNode, level = 0) =
+proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level = 0) =
+  ## This helper will process and simplifies the glade xml, remove unsupported objects
   var
     props = node.getProperties()
-
-  #case node.attr("class")
-  #of "GtkWindow":
-  #  children = node.select("child > object")
-  echo " ".repeat(level*2), node.attr("class")
-  var children = node.select("child > object")
-  for child in children:
-    builder.simplify(child, level+1)
-
-
-
-proc build[ParentWidget: Widget](builder: Builder, node: XmlNode, parent: var ParentWidget) =
-  if node.tag != "object":
-    raise newException(IOError, "input node is not an object")
-
-  var
-    props = node.getProperties()
-    children = node.select("child > object")
-
-  echo "Building ", node.attr("class")
-  var widget: Widget
+    children: seq[XmlNode]
+  echo "[DEBUG] ", " ".repeat(level*2), node.attr("class")
+  var widget: BuilderWidget
   case node.attr("class")
   of "GtkWindow":
-    widget = makeWindow(builder.hasMenuBar, props)
-    parent.addChild((Window)widget)
-  of "GtkBox":
-    widget = makeBox(props)
-    parent.addChild((Box)widget)
+    widget = initUiWidget(UiWindow, props)
   of "GtkFrame":
-    widget = makeGroup(props)
-    parent.addChild((Group)widget)
-  else: discard
+    # find group title
+    var labels = node.select("> child > object.GtkLabel")
+    if labels.len > 0:
+      for prop in labels[0].select("> property"):
+        if prop.attr("name") == "label":
+          props["title"] = prop.innerText
+
+    widget = initUiWidget(UIGroup, props)
+    # ignore GtkAlignment
+    children = node.select("> child > object.GtkAlignment > child > object")
+  of "GtkBox":
+    widget = initUiWidget(UIBox, props)
+  of "GtkButton":
+    widget = initUiWidget(UIButton, props)
+  of "GtkCheckButton":
+    widget = initUiWidget(UICheckbox, props)
+  of "GtkEntry":
+    widget = initUiWidget(UIEntry, props)
+  of "GtkLabel":
+    widget = initUiWidget(UILabel, props)
+
+  # process children
+  if children.isNil:
+    children = node.select("> child > object")
 
   for child in children:
-    builder.build(child, widget)
+    builder.parseXml(child, widget, level+1)
 
-  if node.attr("id").len > 0:
-    builder.ids[node.attr("id")] = widget
+
+  # link with its parent
+  if parent.kind == None:
+    parent = widget
+  else:
+    parent.children.add(widget)
+
+
+proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
+  var widget: Widget
+  case ui.kind
+  of UiWindow:
+    widget = makeWindow(builder.hasMenuBar, ui.props)
+    # default window
+    parent = (Window)widget
+  of UiBox:
+    widget = makeBox(ui.props)
+    parent.addChild((Box)widget)
+  of UiGroup:
+    widget = newGroup(ui.props.getOrDefault("title"), true)
+    parent.addChild((Group)widget)
+  of UiButton:
+    widget = newButton(ui.props.getOrDefault("label", "button"))
+    parent.addChild((Button)widget)
+  of UICheckbox:
+    widget = newCheckbox(ui.props.getOrDefault("label", "checkbox"))
+    parent.addChild((Checkbox)widget)
+  of UIEntry:
+    widget = newEntry(ui.props.getOrDefault("text", "entry"))
+    parent.addChild((Entry)widget)
+  of UILabel:
+    widget = newLabel(ui.props.getOrDefault("label", "label"))
+    parent.addChild((Label)widget)
+  else:
+    discard
+
+  for child in ui.children:
+    builder.build(child, widget)
 
 proc makeMenu(menuBar: XmlNode) =
   var
@@ -68,7 +102,7 @@ proc makeMenu(menuBar: XmlNode) =
     if properties.getOrDefault("visible", "True") != "True":
       menu.hide()
 
-    for item in m.select("child > object.GtkMenu > child > object"):
+    for item in m.select("> child > object.GtkMenu > child > object"):
       properties = item.getProperties()
       case item.attr("class")
       of "GtkMenuItem":
@@ -85,9 +119,9 @@ proc makeMenu(menuBar: XmlNode) =
       #   menuItem.disable()
 
 
-
 proc load*(builder: Builder, path: string) =
   init()
+
   var root = loadXml(path)
   if root.tag != "interface":
     raise newException(IOError, "invalid glade file")
@@ -98,10 +132,12 @@ proc load*(builder: Builder, path: string) =
       builder.hasMenuBar = true
       makeMenu(node)
 
-  var rootWidget: Widget
   for node in root.items:
     if node.tag == "object" and node.attr("class") != "GtkMenuBar":
-      builder.simplify(node)
-      #builder.build(node, rootWidget)
+      var
+        rootBuilderWidget: BuilderWidget
+        rootWidget: Widget
 
+      builder.parseXml(node, rootBuilderWidget)
+      builder.build(rootBuilderWidget, rootWidget)
   mainLoop()

@@ -1,8 +1,8 @@
 import ui, strtabs
 
-
 type
   WidgetKind* = enum
+    None
     UIButton
     UIWindow
     UIBox
@@ -22,8 +22,7 @@ type
     UIMenuItem
     UIMenu
 
-  UiWidget* = ref object of RootObj
+  BuilderWidget* = object
     kind*: WidgetKind
     props*: StringTableRef
-    widget*: Widget
-    children*: seq[UiWidget]
+    children*: seq[BuilderWidget]
