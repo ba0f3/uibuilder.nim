@@ -1,4 +1,4 @@
-import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q
+import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q, strformat
 import private/[helpers, types]
 
 const CHILDREN_SELECTOR = "> child > object"
@@ -66,7 +66,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   else:
     discard
 
-  echo " ".repeat(level*2), node.attr("class"), " ", widget.kind
+  #echo " ".repeat(level*2), node.attr("class"), " ", widget.kind
 
   case widget.kind
   of UiWindow:
@@ -292,3 +292,104 @@ proc load*(builder: Builder, path: string) =
 
       builder.parseXml(node, rootBuilderWidget)
       builder.build(rootBuilderWidget, rootWidget)
+
+proc ADD_CHILD*[Parent: Widget, Child: Widget] (p: Parent, c: Child) =
+  when p is Window:
+    ((Window)p).setChild(c)
+  elif p is Box:
+    when c is Box:
+      ((Box)p).add(c, true)
+    else:
+      ((Box)p).add(c, false)
+  elif p is Group:
+    ((Group)p).child = c
+  else:
+    discard
+
+
+proc gen*(builder: Builder, ui: BuilderWidget, parent = "") =
+  var name = getId(ui.kind)
+
+  if name.len == 0:
+    return
+  #if ui.id.len > 0:
+
+  case ui.kind
+  of UiWindow:
+    echo &"""var {name} = newWindow("{ui.name}", {ui.width}, {ui.height}, {builder.hasMenuBar})
+{name}.margined = true
+{name}.onClosing = (proc (): bool = return true)
+show({name})"""
+  of UiBox:
+    if ui.orientation == HORIZONTAL:
+      echo &"var {name} = newHorizontalBox()"
+    else:
+      echo &"var {name} = newVerticalBox()"
+  of UiGroup:
+    echo &"var {name} = newGroup(\"{ui.groupTitle}\", true)"
+  of UiButton:
+    echo &"var {name} = newButton(\"{ui.buttonText}\")"
+  of UICheckbox:
+    echo &"var {name} = newCheckbox(\"{ui.checkboxText}\")"
+  of UIEntry:
+    echo &"var {name} = newEntry(\"{ui.entryText}\")"
+  of UILabel:
+    echo &"var {name} = newLabel(\"{ui.label}\")"
+  of UISpinbox:
+    var adj: Adjustment
+    if ui.adjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.adjustmentId):
+      adj = builder.adjustmentById[ui.adjustmentId]
+    echo &"""var {name} = newSpinBox({adj.lower}, {adj.upper})
+{name}.value = {adj.value}"""
+  of UiProgressBar:
+    echo &"var {name} = newProgressBar()"
+  of UICombobox:
+    echo &"var {name} = newCombobox()"
+  of UIEditableCombobox:
+    echo &"var {name} = newEditableCombobox()"
+  of UISeparator:
+    echo &"var {name} = newHorizontalSeparator()"
+  of UISlider:
+    var adj: Adjustment
+    if ui.sliderAdjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.sliderAdjustmentId):
+      adj = builder.adjustmentById[ui.sliderAdjustmentId]
+    echo &"""var {name} = newSlider({adj.lower}, {adj.upper})
+{name}.value = {adj.value}"""
+  of UIRadioButtons:
+    echo &"var {name} = newRadioButtons()"
+  of UiTab:
+    echo &"var {name} = newtab()"
+  of UiMultilineEntry:
+    echo &"var {name} = newMultilineEntry()"
+  else:
+    discard
+
+  if parent.len > 0:
+    echo &"ADD_CHILD({parent}, {name})"
+
+  for child in ui.children:
+    builder.gen(child, name)
+
+proc codegen*(builder: Builder, path: string) =
+  var root = loadXml(path)
+  if root.tag != "interface":
+    raise newException(IOError, "invalid glade file")
+
+  echo """import ui, uibuilder
+init()
+"""
+
+
+  for node in root.items:
+    if node.tag == "object" and node.attr("class") != "GtkMenuBar":
+      var
+        rootBuilderWidget: BuilderWidget
+
+      builder.parseXml(node, rootBuilderWidget)
+      builder.gen(rootBuilderWidget)
+  echo "mainLoop()"
+
+when isMainModule:
+  var b = newBuilder()
+  var root = ""
+  b.codegen("examples/basic_controls.glade")

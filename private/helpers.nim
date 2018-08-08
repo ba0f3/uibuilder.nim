@@ -1,4 +1,6 @@
-import ui, strutils, strtabs, types, xmltree, q
+import ui, strutils, strtabs, types, xmltree, q, random
+
+randomize()
 
 proc getProperties*(node: XmlNode): StringTableRef =
   result = newStringTable(modeCaseInsensitive)
@@ -86,3 +88,46 @@ proc initUiWidget*(kind: WidgetKind, node: XmlNode): BuilderWidget =
   result.kind = kind
   result.children = @[]
   result.node = node
+
+proc getId*(kind: WidgetKind): string =
+  var prefix =
+    case kind:
+    of UiWindow:
+      "win"
+    of UiGroup:
+      "group"
+    of UiBox:
+      "box"
+    of UiButton:
+      "btn"
+    of UiCheckbox:
+      "cbox"
+    of UiEntry:
+      "entry"
+    of UiLabel:
+      "label"
+    of UiTab:
+      "tab"
+    of UiSpinBox:
+      "spinbox"
+    of UiSlider:
+      "slider"
+    of UiProgressBar:
+      "pbar"
+    of UiSeparator:
+      "sepa"
+    of UiCombobox:
+      "cbox"
+    of UiEditableCombobox:
+      "ec"
+    of UiMenu:
+      "mnu"
+    of UiMenuItem:
+      "mitem"
+    of UiMultilineEntry:
+      "me"
+    else:
+      ""
+  if prefix.len == 0:
+    return prefix
+  result = prefix & "_" & toHex(rand(high(int))).toLowerAscii()

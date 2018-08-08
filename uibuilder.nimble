@@ -5,7 +5,7 @@ author        = "Huy Doan"
 description   = "UI building with Gnome\'s Glade"
 license       = "MIT"
 skipDirs      = @["examples", "tests"]
-
+bin           = @["uibuilder"]
 # Dependencies
 
 requires "nim >= 0.18.1"
