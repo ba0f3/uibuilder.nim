@@ -26,7 +26,13 @@ type
     UIMenuItem
     UIMenu
 
+  Adjustment* = object
+    lower*: int
+    upper*: int
+    value*: int
+
   BuilderWidget* = object
+    id*: string
     children*: seq[BuilderWidget]
     node*: XmlNode
     visible*: bool
@@ -50,9 +56,8 @@ type
     of UiLabel:
       label*: string
     of UISpinbox:
+      adjustmentId*: string
       value*: int
-      min*: int
-      max*: int
     else:
       discard
 

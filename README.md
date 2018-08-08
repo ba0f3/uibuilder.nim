@@ -17,7 +17,7 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 - [x] Slider
 - [x] ProgressBar
 - [x] Separator
-- [ ] Combobox
+- [x] Combobox
 - [x] EditableCombobox
 - [ ] RadioButtons
 - [ ] MultilineEntry

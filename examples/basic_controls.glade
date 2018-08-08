@@ -103,7 +103,9 @@
     </child>
   </object>
   <object class="GtkAdjustment" id="adjustment1">
+    <property name="lower">10</property>
     <property name="upper">100</property>
+    <property name="value">49</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -169,7 +171,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry">
+                          <object class="GtkEntry" id="entry1">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">Entry</property>
@@ -261,6 +263,7 @@
                               <object class="GtkSpinButton">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="adjustment">adjustment1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">50</property>
                               </object>
@@ -286,6 +289,7 @@
                               <object class="GtkProgressBar">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="inverted">True</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>

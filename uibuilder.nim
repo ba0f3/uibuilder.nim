@@ -5,13 +5,15 @@ const CHILDREN_SELECTOR = "> child > object"
 
 type
   Builder = ref object of RootObj
-    ids: TableRef[string, Widget]
+    widgetById: TableRef[string, Widget]
+    adjustmentById: TableRef[string, Adjustment]
     hasMenuBar: bool
 
 
 proc newBuilder*(): Builder =
   new result
-  result.ids = newTable[string, Widget]()
+  result.widgetById = newTable[string, Widget]()
+  result.adjustmentById = newTable[string, Adjustment]()
   result.hasMenuBar = false
 
 proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level = 0) =
@@ -23,8 +25,22 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     kind = node.attr("class").toWidgetKind
     widget = initUiWidget(kind, node)
 
+  if node.attr("id").len > 0:
+    widget.id = node.attr("id")
+
   if props.hasKey("visbile") and props["visible"] == "True":
     widget.visible = true
+
+  if node.attr("class") == "GtkAdjustment":
+      var adj: Adjustment
+      if props.hasKey("lower"):
+        adj.lower = parseInt(props["lower"])
+      if props.hasKey("upper"):
+        adj.upper = parseInt(props["upper"])
+      if props.hasKey("value"):
+        adj.value = parseInt(props["value"])
+
+      builder.adjustmentById[widget.id] = adj
 
   echo " ".repeat(level*2), node.attr("class"), " ", kind
   case kind
@@ -58,8 +74,10 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   of UiLabel:
     widget.label = props.getOrDefault("label", "")
   of UiSpinBox:
+    if props.hasKey("adjustment"):
+       widget.adjustmentId = props["adjustment"]
     if props.hasKey("value"):
-      widget.value = parseInt(props.getOrDefault("value", "0"))
+      widget.value = parseInt(props["value"])
   of UiEditableCombobox:
     widget.items = @[]
     for item in node.select("item"):
@@ -105,9 +123,16 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
     widget = newLabel(ui.label)
     parent.addChild((Label)widget)
   of UISpinbox:
-    widget = newSpinbox(0, 100)
-    ((SpinBox)widget).value = ui.value
-    parent.addChild((SpinBox)widget)
+    var adj: Adjustment
+    if ui.adjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.adjustmentId):
+      adj = builder.adjustmentById[ui.adjustmentId]
+    var spinbox = newSpinbox(adj.lower, adj.upper)
+    if ui.value != 0:
+      spinbox.value = ui.value
+    else:
+      spinbox.value = adj.value
+    parent.addChild(spinbox)
+    widget = spinbox
   of UiProgressBar:
     widget = newProgressBar()
     ((ProgressBar)widget).value = 50
@@ -132,6 +157,9 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
 
   for child in ui.children:
     builder.build(child, widget)
+
+  if ui.id.len > 0:
+    builder.widgetById[ui.id] = widget
 
 proc makeMenu(menuBar: XmlNode) =
   var
