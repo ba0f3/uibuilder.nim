@@ -31,6 +31,10 @@ type
     upper*: int
     value*: int
 
+  TabPanel* = object
+    label*: string
+    widget*: Widget
+
   BuilderWidget* = object
     id*: string
     children*: seq[BuilderWidget]
@@ -60,6 +64,8 @@ type
       value*: int
     of UIRadioButtons:
       buttons*: seq[string]
+    of UITab:
+      labels*: seq[string]
     else:
       discard
 

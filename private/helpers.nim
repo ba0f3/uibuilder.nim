@@ -5,6 +5,14 @@ proc getProperties*(node: XmlNode): StringTableRef =
   for prop in node.select("> property"):
     result[prop.attr("name")] = prop.innerText
 
+proc getLabel*(node: XmlNode): string =
+  for prop in node.select("> property"):
+    if prop.attr("name") == "label":
+      result = prop.innerText
+
+proc getLabel*(node: seq[XmlNode]): string {.inline.} =
+  if not node.isNil and node.len > 0:
+    result = getLabel(node[0])
 
 proc addChild*[Parent: Widget, Child: Widget](p: Parent, c: Child) =
   if p of Window:

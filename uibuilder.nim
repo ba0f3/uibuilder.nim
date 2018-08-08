@@ -75,11 +75,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     children = node.select(CHILDREN_SELECTOR)
   of UiGroup:
     # find group title
-    var labels = node.select("> child > object.GtkLabel")
-    if labels.len > 0:
-      for prop in labels[0].select("> property"):
-        if prop.attr("name") == "label":
-          widget.groupTitle = prop.innerText
+    widget.groupTitle = getLabel(node.select("> child > object.GtkLabel"))
     # ignore GtkAlignment
     children = node.select("> child > object.GtkAlignment > child > object")
   of UiBox:
@@ -106,11 +102,24 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   of UiRadioButtons:
     widget.buttons = @[]
     children = node.select("> child > object.GtkRadioButton")
-    #for button in button
-    #  widget.button.add(button.innerText)
+  of UiTab:
+    var
+      nextIsLabel = false
+    widget.labels = @[]
+    for child in node.select("> child"):
+      if child.attr("type") == "tab":
+        if not nextIsLabel:
+          raise newException(ValueError, "got a label but a widget expected")
+        nextIsLabel = false
+        widget.labels.add getLabel(child.select("> object.GtkLabel"))
+      else:
+        if nextIsLabel:
+          raise newException(ValueError, "invalid tab child widget, a label expected")
+        nextIsLabel = true
+        children.add(child.select("> object"))
+
   else:
     if gtkClass == "GtkRadioButton":
-      echo parent.kind
       case parent.kind
       of UIRadioButtons:
         parent.buttons.add(props.getOrDefault("label", "radiobutton"))
@@ -134,8 +143,6 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
   case ui.kind
   of UiWindow:
     widget = makeWindow(ui, builder.hasMenuBar)
-    # default window
-    parent = (Window)widget
   of UiBox:
     widget = makeBox(ui)
     parent.addChild((Box)widget)
@@ -189,11 +196,26 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
     for button in ui.buttons:
       ((RadioButtons)widget).add(button)
     parent.addChild((RadioButtons)widget)
+  of UiTab:
+    var tab = newTab()
+    for i in 0..<ui.labels.len:
+      var panel: Widget
+      builder.build(ui.children[i], panel)
+      tab.add(ui.labels[i], (Box)panel)
+    parent.addChild(tab)
+    if ui.id.len > 0:
+      builder.widgetById[ui.id] = tab
+
+    # don't add children directly like other container
+    return
   else:
     discard
 
   for child in ui.children:
     builder.build(child, widget)
+
+  if parent.isNil:
+    parent = widget
 
   if ui.id.len > 0:
     builder.widgetById[ui.id] = widget

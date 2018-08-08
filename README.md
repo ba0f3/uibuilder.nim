@@ -2,6 +2,10 @@
 UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](https://glade.gnome.org/)
 
 
+![examples](https://raw.githubusercontent.com/ba0f3/uibuilder.nim/master/examples/basic_controls.png)
+
+Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
+
 ### Whats working?
 > "working" means able to display on GUI, nothing else
 
@@ -11,7 +15,7 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 - [x] Checkbox
 - [x] Entry
 - [x] Label
-- [ ] Tab
+- [x] Tab
 - [x] Group
 - [x] Spinbox
 - [x] Slider
@@ -24,11 +28,14 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 - [x] MenuItem
 - [x] Menu
 
+
 ### Notes
-- currently support only one Window
-- dont put MenuBar into Window
+- Currently support only one Window
+- Tab page child should be a box
+- Dont put MenuBar into Window
+
 
 ### Todos
-- Event handling
-- Code generator for static layout
-- Support QT Designer layout file
+- [ ] Better event handling
+- [ ] Code generator for static layout
+- [ ] Support QT Designer layout file
