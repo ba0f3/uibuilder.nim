@@ -6,6 +6,8 @@ builder.load("basic_controls.glade")
 var
   button = (Button)builder.getWidgetById("button1")
   entry = (Entry)builder.getWidgetById("entry1")
+  spinbox = (SpinBox)builder.getWidgetById("spinbox1")
+  slider = (Slider)builder.getWidgetById("slider1")
 
 button.onclick = proc() =
   var mainwin = (Window)builder.getWidgetById("mainWin")
@@ -17,5 +19,9 @@ proc entryOnchangeHandler(e: Entry): auto =
   return cb
 
 entry.onchanged = entryOnchangeHandler(entry)
+
+
+slider.onchanged = proc (newvalue: int) =
+  spinbox.value = newvalue
 
 builder.run()
