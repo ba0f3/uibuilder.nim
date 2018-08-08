@@ -19,7 +19,7 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 - [x] Separator
 - [x] Combobox
 - [x] EditableCombobox
-- [ ] RadioButtons
+- [x] RadioButtons
 - [ ] MultilineEntry
 - [x] MenuItem
 - [x] Menu
@@ -27,6 +27,8 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 ### Notes
 - currently support only one Window
 - dont put MenuBar into Window
+
 ### Todos
 - Event handling
 - Code generator for static layout
+- Support QT Designer layout file

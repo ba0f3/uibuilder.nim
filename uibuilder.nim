@@ -16,14 +16,30 @@ proc newBuilder*(): Builder =
   result.adjustmentById = newTable[string, Adjustment]()
   result.hasMenuBar = false
 
+proc getWidgetById*(builder: Builder, id: string): Widget =
+  if builder.widgetById.hasKey(id):
+    result = builder.widgetById[id]
+  else:
+    raise newException(ValueError, "no widget with id " & id & " found")
+
+proc run*(builder: Builder) =
+  mainLoop()
+
 proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level = 0) =
   ## This helper will process and simplifies the glade xml, remove unsupported objects
   var
     props = node.getProperties()
     children: seq[XmlNode]
-  var
-    kind = node.attr("class").toWidgetKind
-    widget = initUiWidget(kind, node)
+    gtkClass = node.attr("class")
+    kind = gtkClass.toWidgetKind
+
+  # Hack for radio buttons group
+  if gtkClass == "GtkBox":
+    var class = node.select("> style > class")
+    if class.len > 0 and class[0].attr("name") == "radiobuttons":
+      kind = UiRadioButtons
+
+  var widget = initUiWidget(kind, node)
 
   if node.attr("id").len > 0:
     widget.id = node.attr("id")
@@ -31,7 +47,8 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   if props.hasKey("visbile") and props["visible"] == "True":
     widget.visible = true
 
-  if node.attr("class") == "GtkAdjustment":
+  case gtkClass
+  of "GtkAdjustment":
       var adj: Adjustment
       if props.hasKey("lower"):
         adj.lower = parseInt(props["lower"])
@@ -41,9 +58,13 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
         adj.value = parseInt(props["value"])
 
       builder.adjustmentById[widget.id] = adj
+      return
+  else:
+    discard
 
-  echo " ".repeat(level*2), node.attr("class"), " ", kind
-  case kind
+  echo " ".repeat(level*2), node.attr("class"), " ", widget.kind
+
+  case widget.kind
   of UiWindow:
     if props.hasKey("default_width"):
       widget.width = parseInt(props["default_width"])
@@ -82,8 +103,19 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     widget.items = @[]
     for item in node.select("item"):
       widget.items.add(item.innerText)
+  of UiRadioButtons:
+    widget.buttons = @[]
+    children = node.select("> child > object.GtkRadioButton")
+    #for button in button
+    #  widget.button.add(button.innerText)
   else:
-    discard
+    if gtkClass == "GtkRadioButton":
+      echo parent.kind
+      case parent.kind
+      of UIRadioButtons:
+        parent.buttons.add(props.getOrDefault("label", "radiobutton"))
+      else:
+        discard
 
   # process children
   if not children.isNil:
@@ -152,6 +184,11 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
   of UISlider:
     widget = newSlider(0, 100)
     parent.addChild((Slider)widget)
+  of UIRadioButtons:
+    widget = newRadioButtons()
+    for button in ui.buttons:
+      ((RadioButtons)widget).add(button)
+    parent.addChild((RadioButtons)widget)
   else:
     discard
 
@@ -192,7 +229,6 @@ proc makeMenu(menuBar: XmlNode) =
 
 proc load*(builder: Builder, path: string) =
   init()
-
   var root = loadXml(path)
   if root.tag != "interface":
     raise newException(IOError, "invalid glade file")
@@ -211,4 +247,3 @@ proc load*(builder: Builder, path: string) =
 
       builder.parseXml(node, rootBuilderWidget)
       builder.build(rootBuilderWidget, rootWidget)
-  mainLoop()

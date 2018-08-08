@@ -58,6 +58,8 @@ type
     of UISpinbox:
       adjustmentId*: string
       value*: int
+    of UIRadioButtons:
+      buttons*: seq[string]
     else:
       discard
 
