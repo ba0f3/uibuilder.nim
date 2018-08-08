@@ -31,7 +31,7 @@ Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
 
 ### Notes
 - Currently support only one Window
-- Tab page child should be a box
+- Tab panel cant be empty, and it must be a Box
 - Dont put MenuBar into Window
 
 

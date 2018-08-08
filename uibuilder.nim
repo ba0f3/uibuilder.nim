@@ -201,7 +201,12 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
     for i in 0..<ui.labels.len:
       var panel: Widget
       builder.build(ui.children[i], panel)
-      tab.add(ui.labels[i], (Box)panel)
+      if panel of Box:
+        tab.add(ui.labels[i], (Box)panel)
+      else:
+        raise newException(ValueError, "Tab " & ui.labels[i] & "'s panel must be a box")
+
+
     parent.addChild(tab)
     if ui.id.len > 0:
       builder.widgetById[ui.id] = tab
