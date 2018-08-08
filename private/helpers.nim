@@ -10,7 +10,10 @@ proc addChild*[Parent: Widget, Child: Widget](p: Parent, c: Child) =
   if p of Window:
     ((Window)p).setChild(c)
   elif p of Box:
-    ((Box)p).add(c, true)
+    if c is Box:
+      ((Box)p).add(c, true)
+    else:
+      ((Box)p).add(c, false)
   elif p of Group:
     ((Group)p).child = c
   else:
@@ -55,32 +58,23 @@ proc toWidgetKind*(GTKClass: string): WidgetKind =
   else:
     result = None
     {.warning: "not supported widget"}
-proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
-  var
-    width = 640
-    height = 480
 
-  if props.hasKey("default_width"):
-    width = parseInt(props["default_width"])
-
-  if props.hasKey("default_height"):
-    height = parseInt(props["default_height"])
-
-  result = newWindow(props.getOrDefault("name", "Window"), width, height, hasMenuBar)
+proc makeWindow*(w: BuilderWidget, hasMenuBar: bool): Window =
+  result = newWindow(w.name, w.width, w.height, hasMenuBar)
   result.margined = true
   result.onClosing = (proc (): bool = return true)
   show(result)
 
-proc makeBox*(props: StringTableRef): Box =
+proc makeBox*(w: BuilderWidget): Box =
   var
-    padded = false
-  if props.hasKey("orientation") and props["orientation"] == "vertical":
+    padded = true
+  if w.orientation == VERTICAL:
     result = newVerticalBox(padded)
   else:
     result = newHorizontalBox(padded)
 
 
-proc initUiWidget*(kind: WidgetKind, props: StringTableRef = nil): BuilderWidget =
+proc initUiWidget*(kind: WidgetKind, node: XmlNode): BuilderWidget =
   result.kind = kind
-  result.props = props
   result.children = @[]
+  result.node = node

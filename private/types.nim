@@ -1,6 +1,10 @@
-import ui, strtabs
+import ui, strtabs, xmltree
 
 type
+  Orientation* = enum
+    HORIZONTAL
+    VERTICAL
+
   WidgetKind* = enum
     None
     UIButton
@@ -23,6 +27,32 @@ type
     UIMenu
 
   BuilderWidget* = object
-    kind*: WidgetKind
-    props*: StringTableRef
     children*: seq[BuilderWidget]
+    node*: XmlNode
+
+    case kind*: WidgetKind
+    of UIWindow:
+      width*: int
+      height*: int
+      name*: string
+    of UIBox:
+      orientation*: Orientation
+    of UIGroup:
+      groupTitle*: string
+    of UIButton:
+      buttonText*: string
+    of UIEntry:
+      entryText*: string
+    of UICheckbox:
+      checkboxText*: string
+    of UIEditableCombobox:
+      items: seq[string]
+    of UiLabel:
+      label*: string
+    of UISpinbox:
+      value*: int
+      min*: int
+      max*: int
+    else:
+      discard
+

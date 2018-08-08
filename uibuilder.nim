@@ -19,24 +19,40 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     children: seq[XmlNode]
   var
     kind = node.attr("class").toWidgetKind
-    widget: BuilderWidget
+    widget = initUiWidget(kind, node)
   echo " ".repeat(level*2), node.attr("class"), " ", kind
   case kind
-  of None:
-    {.warning: "check please".}
+  of UiWindow:
+    if props.hasKey("default_width"):
+      widget.width = parseInt(props["default_width"])
+    if props.hasKey("default_height"):
+      widget.height = parseInt(props["default_height"])
+    widget.name = props.getOrDefault("name", "")
   of UiGroup:
     # find group title
     var labels = node.select("> child > object.GtkLabel")
     if labels.len > 0:
       for prop in labels[0].select("> property"):
         if prop.attr("name") == "label":
-          props["title"] = prop.innerText
-
-    widget = initUiWidget(UIGroup, props)
+          widget.groupTitle = prop.innerText
     # ignore GtkAlignment
     children = node.select("> child > object.GtkAlignment > child > object")
+  of UiBox:
+    if props.hasKey("orientation") and props["orientation"] == "vertical":
+      widget.orientation = VERTICAL
+  of UiButton:
+    widget.buttonText = props.getOrDefault("label", "")
+  of UiCheckbox:
+    widget.checkboxText = props.getOrDefault("label", "")
+  of UiEntry:
+    widget.entryText = props.getOrDefault("text", "")
+  of UiLabel:
+    widget.label = props.getOrDefault("label", "")
+  of UiSpinBox:
+    if props.hasKey("value"):
+      widget.value = parseInt(props.getOrDefault("value", "0"))
   else:
-    widget = initUiWidget(kind, props)
+    discard
 
   # process children
   if children.isNil:
@@ -56,31 +72,30 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
   var widget: Widget
   case ui.kind
   of UiWindow:
-    widget = makeWindow(builder.hasMenuBar, ui.props)
+    widget = makeWindow(ui, builder.hasMenuBar)
     # default window
     parent = (Window)widget
   of UiBox:
-    widget = makeBox(ui.props)
+    widget = makeBox(ui)
     parent.addChild((Box)widget)
   of UiGroup:
-    widget = newGroup(ui.props.getOrDefault("title"), true)
+    widget = newGroup(ui.groupTitle, true)
     parent.addChild((Group)widget)
   of UiButton:
-    widget = newButton(ui.props.getOrDefault("label", "button"))
+    widget = newButton(ui.buttonText)
     parent.addChild((Button)widget)
   of UICheckbox:
-    widget = newCheckbox(ui.props.getOrDefault("label", "checkbox"))
+    widget = newCheckbox(ui.checkboxText)
     parent.addChild((Checkbox)widget)
   of UIEntry:
-    widget = newEntry(ui.props.getOrDefault("text", "entry"))
+    widget = newEntry(ui.entryText)
     parent.addChild((Entry)widget)
   of UILabel:
-    widget = newLabel(ui.props.getOrDefault("label", "label"))
+    widget = newLabel(ui.label)
     parent.addChild((Label)widget)
   of UISpinbox:
-    let value = parseInt(ui.props.getOrDefault("value", "0"))
     widget = newSpinbox(0, 100)
-    ((SpinBox)widget).value = value
+    ((SpinBox)widget).value = ui.value
     parent.addChild((SpinBox)widget)
   of UiProgressBar:
     widget = newProgressBar()
@@ -91,7 +106,7 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
   of UIEditableCombobox:
     widget = newEditableCombobox()
     parent.addChild((EditableCombobox)widget)
-    
+
   else:
     discard
 
