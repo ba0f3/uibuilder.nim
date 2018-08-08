@@ -99,6 +99,9 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
        widget.adjustmentId = props["adjustment"]
     if props.hasKey("value"):
       widget.value = parseInt(props["value"])
+  of UiSlider:
+    if props.hasKey("adjustment"):
+      widget.sliderAdjustmentId = props["adjustment"]
   of UiEditableCombobox:
     widget.items = @[]
     for item in node.select("item"):
@@ -196,7 +199,11 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
     widget = newHorizontalSeparator()
     parent.addChild((Separator)widget)
   of UISlider:
-    widget = newSlider(0, 100)
+    var adj: Adjustment
+    if ui.sliderAdjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.sliderAdjustmentId):
+      adj = builder.adjustmentById[ui.sliderAdjustmentId]
+    widget = newSlider(adj.lower, adj.upper)
+    ((Slider)widget).value = adj.value
     parent.addChild((Slider)widget)
   of UIRadioButtons:
     widget = newRadioButtons()

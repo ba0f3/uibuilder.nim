@@ -62,6 +62,8 @@ type
     of UISpinbox:
       adjustmentId*: string
       value*: int
+    of UISlider:
+      sliderAdjustmentId*: string
     of UIRadioButtons:
       buttons*: seq[string]
     of UITab:

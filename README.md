@@ -1,39 +1,35 @@
 # uibuilder.nim
 UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](https://glade.gnome.org/)
-
-
-![examples](https://raw.githubusercontent.com/ba0f3/uibuilder.nim/master/examples/basic_controls.png)
-
 Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
 
-### Whats working?
-> "working" means able to display on GUI, nothing else
+### Usage
+> you must have [Glade](https://glade.gnome.org/) installed in order to build UI and create *.glade files
 
-- [x] Button
-- [x] Window
-- [x] Box
-- [x] Checkbox
-- [x] Entry
-- [x] Label
-- [x] Tab
-- [x] Group
-- [x] Spinbox
-- [x] Slider
-- [x] ProgressBar
-- [x] Separator
-- [x] Combobox
-- [x] EditableCombobox
-- [x] RadioButtons
-- [x] MultilineEntry
-- [x] MenuItem
-- [x] Menu
+```nim
+import ui, uibuilder
 
+var builder = newBuilder()
+builder.load("ui.glade")
+builder.run()
+```
 
-### Notes
-- Currently support only one Window
-- Tab panel cant be empty, and it must be a Box
-- Dont put MenuBar into Window
+### Widgets
+> Almost widgets are same as GTK Widgets, but there are some widgets need a small hack in order to work
+##### Group
+UI Builder converts `GtkFrame` into a `Group`, it will finds nested `GtkLabel` and make it as `Group`'s  title
+##### RadioButtons
+In Glade, you must cover a group of `GtkRadioButton`s with a `GtkBox`, the box must have a style class named `radiobuttons`
+##### Tab
+`Tab` uses `GtkNotebook`, tab's container must be a `GtkBox`
+##### MultilineEntry
+Just add a `GtkTextView` widget to make a `MultilineEntry`, you also can pre-define text for it w/ `GtkTextBuffer`
+##### Menu
+libui requires to init `Menu` first, before creating main `Window`, so it better make a `GtkMenuBar` separated
+##### Slider
+ `Slider` uses `GtkScale`
+You can defined ajustment for `Slider` and `SpinBox` with `GtkAdjustment`
 
+![examples](https://raw.githubusercontent.com/ba0f3/uibuilder.nim/master/examples/basic_controls.png)
 
 ### Todos
 - [ ] Better event handling

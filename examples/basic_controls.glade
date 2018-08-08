@@ -308,6 +308,7 @@ From Vietnam with love &lt;3</property>
                               <object class="GtkScale">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="adjustment">adjustment1</property>
                                 <property name="round_digits">1</property>
                               </object>
                               <packing>
