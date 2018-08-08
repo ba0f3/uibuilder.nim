@@ -29,7 +29,7 @@ type
   BuilderWidget* = object
     children*: seq[BuilderWidget]
     node*: XmlNode
-
+    visible*: bool
     case kind*: WidgetKind
     of UIWindow:
       width*: int
@@ -46,7 +46,7 @@ type
     of UICheckbox:
       checkboxText*: string
     of UIEditableCombobox:
-      items: seq[string]
+      items*: seq[string]
     of UiLabel:
       label*: string
     of UISpinbox:

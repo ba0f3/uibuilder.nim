@@ -13,12 +13,12 @@ UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](http
 - [x] Label
 - [ ] Tab
 - [x] Group
-- [ ] Spinbox
-- [ ] Slider
-- [ ] ProgressBar
-- [ ] Separator
+- [x] Spinbox
+- [x] Slider
+- [x] ProgressBar
+- [x] Separator
 - [ ] Combobox
-- [ ] EditableCombobox
+- [x] EditableCombobox
 - [ ] RadioButtons
 - [ ] MultilineEntry
 - [x] MenuItem

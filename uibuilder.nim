@@ -1,6 +1,8 @@
 import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q
 import private/[helpers, types]
 
+const CHILDREN_SELECTOR = "> child > object"
+
 type
   Builder = ref object of RootObj
     ids: TableRef[string, Widget]
@@ -20,6 +22,10 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   var
     kind = node.attr("class").toWidgetKind
     widget = initUiWidget(kind, node)
+
+  if props.hasKey("visbile") and props["visible"] == "True":
+    widget.visible = true
+
   echo " ".repeat(level*2), node.attr("class"), " ", kind
   case kind
   of UiWindow:
@@ -28,6 +34,8 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     if props.hasKey("default_height"):
       widget.height = parseInt(props["default_height"])
     widget.name = props.getOrDefault("name", "")
+
+    children = node.select(CHILDREN_SELECTOR)
   of UiGroup:
     # find group title
     var labels = node.select("> child > object.GtkLabel")
@@ -40,6 +48,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   of UiBox:
     if props.hasKey("orientation") and props["orientation"] == "vertical":
       widget.orientation = VERTICAL
+    children = node.select(CHILDREN_SELECTOR)
   of UiButton:
     widget.buttonText = props.getOrDefault("label", "")
   of UiCheckbox:
@@ -51,15 +60,17 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   of UiSpinBox:
     if props.hasKey("value"):
       widget.value = parseInt(props.getOrDefault("value", "0"))
+  of UiEditableCombobox:
+    widget.items = @[]
+    for item in node.select("item"):
+      widget.items.add(item.innerText)
   else:
     discard
 
   # process children
-  if children.isNil:
-    children = node.select("> child > object")
-
-  for child in children:
-    builder.parseXml(child, widget, level+1)
+  if not children.isNil:
+    for child in children:
+      builder.parseXml(child, widget, level+1)
 
   # link with its parent
   if parent.kind == None:
@@ -99,14 +110,23 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
     parent.addChild((SpinBox)widget)
   of UiProgressBar:
     widget = newProgressBar()
+    ((ProgressBar)widget).value = 50
     parent.addChild((ProgressBar)widget)
   of UICombobox:
     widget = newCombobox()
     parent.addChild((Combobox)widget)
   of UIEditableCombobox:
-    widget = newEditableCombobox()
-    parent.addChild((EditableCombobox)widget)
-
+    var ec = newEditableCombobox()
+    for item in ui.items:
+      ec.add(item)
+    parent.addChild(ec)
+    widget = ec
+  of UISeparator:
+    widget = newHorizontalSeparator()
+    parent.addChild((Separator)widget)
+  of UISlider:
+    widget = newSlider(0, 100)
+    parent.addChild((Slider)widget)
   else:
     discard
 
