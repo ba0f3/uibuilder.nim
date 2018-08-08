@@ -123,6 +123,13 @@
       </row>
     </data>
   </object>
+  <object class="GtkTextBuffer" id="textbuffer1">
+    <property name="text" translatable="yes">Hello world,
+
+This built by UI Builder with Glade Interface designer and libui :)
+
+From Vietnam with love &lt;3</property>
+  </object>
   <object class="GtkWindow" id="mainWin">
     <property name="name">Control Gallery</property>
     <property name="can_focus">False</property>
@@ -231,7 +238,17 @@
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkTextView">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="wrap_mode">word</property>
+                            <property name="buffer">textbuffer1</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">6</property>
+                          </packing>
                         </child>
                       </object>
                     </child>

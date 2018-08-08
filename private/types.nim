@@ -66,6 +66,9 @@ type
       buttons*: seq[string]
     of UITab:
       labels*: seq[string]
+    of UIMultilineEntry:
+      text*: string
+      wrapText*: bool
     else:
       discard
 

@@ -7,6 +7,7 @@ type
   Builder = ref object of RootObj
     widgetById: TableRef[string, Widget]
     adjustmentById: TableRef[string, Adjustment]
+    textBufferById: StringTableRef
     hasMenuBar: bool
 
 
@@ -14,6 +15,7 @@ proc newBuilder*(): Builder =
   new result
   result.widgetById = newTable[string, Widget]()
   result.adjustmentById = newTable[string, Adjustment]()
+  result.textBufferById = newStringTable()
   result.hasMenuBar = false
 
 proc getWidgetById*(builder: Builder, id: string): Widget =
@@ -49,16 +51,18 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
 
   case gtkClass
   of "GtkAdjustment":
-      var adj: Adjustment
-      if props.hasKey("lower"):
-        adj.lower = parseInt(props["lower"])
-      if props.hasKey("upper"):
-        adj.upper = parseInt(props["upper"])
-      if props.hasKey("value"):
-        adj.value = parseInt(props["value"])
-
-      builder.adjustmentById[widget.id] = adj
-      return
+    var adj: Adjustment
+    if props.hasKey("lower"):
+      adj.lower = parseInt(props["lower"])
+    if props.hasKey("upper"):
+      adj.upper = parseInt(props["upper"])
+    if props.hasKey("value"):
+      adj.value = parseInt(props["value"])
+    builder.adjustmentById[widget.id] = adj
+    return
+  of "GtkTextBuffer":
+    builder.textBufferById[widget.id] = props.getOrDefault("text", "")
+    return
   else:
     discard
 
@@ -103,8 +107,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     widget.buttons = @[]
     children = node.select("> child > object.GtkRadioButton")
   of UiTab:
-    var
-      nextIsLabel = false
+    var nextIsLabel = false
     widget.labels = @[]
     for child in node.select("> child"):
       if child.attr("type") == "tab":
@@ -117,7 +120,11 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
           raise newException(ValueError, "invalid tab child widget, a label expected")
         nextIsLabel = true
         children.add(child.select("> object"))
-
+  of UiMultilineEntry:
+    if props.hasKey("buffer"):
+      widget.text = builder.textBufferById[props["buffer"]]
+    if props.hasKey("wrap_mode"):
+      widget.wrapText = true
   else:
     if gtkClass == "GtkRadioButton":
       case parent.kind
@@ -205,14 +212,18 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
         tab.add(ui.labels[i], (Box)panel)
       else:
         raise newException(ValueError, "Tab " & ui.labels[i] & "'s panel must be a box")
-
-
     parent.addChild(tab)
     if ui.id.len > 0:
       builder.widgetById[ui.id] = tab
-
     # don't add children directly like other container
     return
+  of UiMultilineEntry:
+    if ui.wrapText:
+      widget = newMultilineEntry()
+    else:
+      widget = newNonWrappingMultilineEntry()
+    ((MultilineEntry)widget).text = ui.text
+    parent.addChild((MultilineEntry)widget)
   else:
     discard
 

@@ -24,7 +24,7 @@ Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
 - [x] Combobox
 - [x] EditableCombobox
 - [x] RadioButtons
-- [ ] MultilineEntry
+- [x] MultilineEntry
 - [x] MenuItem
 - [x] Menu
 
