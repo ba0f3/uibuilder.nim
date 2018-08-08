@@ -10,13 +10,51 @@ proc addChild*[Parent: Widget, Child: Widget](p: Parent, c: Child) =
   if p of Window:
     ((Window)p).setChild(c)
   elif p of Box:
-    ((Box)p).add(c)
+    ((Box)p).add(c, true)
   elif p of Group:
     ((Group)p).child = c
   else:
     discard
 
-
+proc toWidgetKind*(GTKClass: string): WidgetKind =
+  case GTKClass
+  of "GtkWindow":
+    result = UiWindow
+  of "GtkFrame":
+    result = UiGroup
+  of "GtkBox":
+    result = UiBox
+  of "GtkButton":
+    result = UiButton
+  of "GtkCheckButton":
+    result = UiCheckbox
+  of "GtkEntry":
+    result = UiEntry
+  of "GtkLabel":
+    result = UiLabel
+  of "GtkNotebook":
+    result = UiTab
+  of "GtkSpinButton":
+    result = UiSpinBox
+  of "GtkScale":
+    result = UiSlider
+  of "GtkProgressBar":
+    result = UiProgressBar
+  of "GtkSeparator":
+    result = UiSeparator
+  of "GtkComboBox":
+    result = UiCombobox
+  of "GtkComboBoxText":
+    result = UiEditableCombobox
+  of "GtkMenu":
+    result = UiMenu
+  of "GtkMenuItem":
+    result = UiMenuItem
+  of "GtkTextView":
+    result = UiMultilineEntry
+  else:
+    result = None
+    {.warning: "not supported widget"}
 proc makeWindow*(hasMenuBar: bool, props: StringTableRef): Window =
   var
     width = 640

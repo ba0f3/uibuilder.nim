@@ -17,12 +17,14 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   var
     props = node.getProperties()
     children: seq[XmlNode]
-  echo "[DEBUG] ", " ".repeat(level*2), node.attr("class")
-  var widget: BuilderWidget
-  case node.attr("class")
-  of "GtkWindow":
-    widget = initUiWidget(UiWindow, props)
-  of "GtkFrame":
+  var
+    kind = node.attr("class").toWidgetKind
+    widget: BuilderWidget
+  echo " ".repeat(level*2), node.attr("class"), " ", kind
+  case kind
+  of None:
+    {.warning: "check please".}
+  of UiGroup:
     # find group title
     var labels = node.select("> child > object.GtkLabel")
     if labels.len > 0:
@@ -33,16 +35,8 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     widget = initUiWidget(UIGroup, props)
     # ignore GtkAlignment
     children = node.select("> child > object.GtkAlignment > child > object")
-  of "GtkBox":
-    widget = initUiWidget(UIBox, props)
-  of "GtkButton":
-    widget = initUiWidget(UIButton, props)
-  of "GtkCheckButton":
-    widget = initUiWidget(UICheckbox, props)
-  of "GtkEntry":
-    widget = initUiWidget(UIEntry, props)
-  of "GtkLabel":
-    widget = initUiWidget(UILabel, props)
+  else:
+    widget = initUiWidget(kind, props)
 
   # process children
   if children.isNil:
@@ -50,7 +44,6 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
 
   for child in children:
     builder.parseXml(child, widget, level+1)
-
 
   # link with its parent
   if parent.kind == None:
@@ -84,6 +77,21 @@ proc build(builder: Builder, ui: BuilderWidget, parent: var Widget) =
   of UILabel:
     widget = newLabel(ui.props.getOrDefault("label", "label"))
     parent.addChild((Label)widget)
+  of UISpinbox:
+    let value = parseInt(ui.props.getOrDefault("value", "0"))
+    widget = newSpinbox(0, 100)
+    ((SpinBox)widget).value = value
+    parent.addChild((SpinBox)widget)
+  of UiProgressBar:
+    widget = newProgressBar()
+    parent.addChild((ProgressBar)widget)
+  of UICombobox:
+    widget = newCombobox()
+    parent.addChild((Combobox)widget)
+  of UIEditableCombobox:
+    widget = newEditableCombobox()
+    parent.addChild((EditableCombobox)widget)
+    
   else:
     discard
 
