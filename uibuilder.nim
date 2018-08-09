@@ -305,6 +305,7 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     f.write &"""var {name} = newWindow("{ui.name}", {ui.width}, {ui.height}, {builder.hasMenuBar})
 {name}.margined = true
 {name}.onClosing = (proc (): bool = return true)
+{name}.show()
 """
   of UiBox:
     if ui.orientation == HORIZONTAL:
@@ -369,7 +370,10 @@ proc codegen*(builder: Builder, path: string) =
   outputPath[lastDot..<path.len] = ".nim"
 
   var output = open(outputPath, fmWrite)
-  output.write "import ui\n\n"
+  output.write """import ui
+when isMainModule:
+  init()
+"""
 
   var ids: seq[string] = @[]
   for node in root.items:
@@ -382,6 +386,13 @@ proc codegen*(builder: Builder, path: string) =
 
   if ids.len > 0:
     output.write "\nexport " & ids.join(", ")
+
+    output.write """
+
+
+when isMainModule:
+  mainLoop()
+"""
 
   output.close()
 
