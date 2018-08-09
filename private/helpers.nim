@@ -89,45 +89,15 @@ proc initUiWidget*(kind: WidgetKind, node: XmlNode): BuilderWidget =
   result.children = @[]
   result.node = node
 
-proc getId*(kind: WidgetKind): string =
-  var prefix =
-    case kind:
-    of UiWindow:
-      "win"
-    of UiGroup:
-      "group"
-    of UiBox:
-      "box"
-    of UiButton:
-      "btn"
-    of UiCheckbox:
-      "cbox"
-    of UiEntry:
-      "entry"
-    of UiLabel:
-      "label"
-    of UiTab:
-      "tab"
-    of UiSpinBox:
-      "spinbox"
-    of UiSlider:
-      "slider"
-    of UiProgressBar:
-      "pbar"
-    of UiSeparator:
-      "sepa"
-    of UiCombobox:
-      "cbox"
-    of UiEditableCombobox:
-      "ec"
-    of UiMenu:
-      "mnu"
-    of UiMenuItem:
-      "mitem"
-    of UiMultilineEntry:
-      "me"
-    else:
-      ""
-  if prefix.len == 0:
-    return prefix
-  result = prefix & "_" & toHex(rand(high(int))).toLowerAscii()
+proc getId*(w: BuilderWidget, ids: var seq[string] = @[]): string =
+  if w.id.len > 0:
+    result = w.id
+    ids.add(result)
+  else:
+    var kindStr = $w.kind
+    if w.kind == None:
+      return ""
+    var prefix = kindStr[2..<kindStr.len]
+    prefix[0] = prefix[0].toLowerAscii()
+    result = prefix & toHex(rand(high(int))).toLowerAscii()
+

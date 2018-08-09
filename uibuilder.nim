@@ -1,5 +1,7 @@
-import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q, strformat
+import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q, strformat, os
 import private/[helpers, types]
+
+{.deadCodeElim: on.}
 
 const CHILDREN_SELECTOR = "> child > object"
 
@@ -272,6 +274,20 @@ proc makeMenu(menuBar: XmlNode) =
       #   menuItem.disable()
 
 
+proc genAddStmt(p, c: BuilderWidget): string =
+  
+  if p of Window:
+    ((Window)p).setChild(c)
+  elif p of Box:
+    if c is Box:
+      ((Box)p).add(c, true)
+    else:
+      ((Box)p).add(c, false)
+  elif p of Group:
+    ((Group)p).child = c
+  else:
+    discard
+
 proc load*(builder: Builder, path: string) =
   init()
   var root = loadXml(path)
@@ -293,7 +309,7 @@ proc load*(builder: Builder, path: string) =
       builder.parseXml(node, rootBuilderWidget)
       builder.build(rootBuilderWidget, rootWidget)
 
-proc ADD_CHILD*[Parent: Widget, Child: Widget] (p: Parent, c: Child) =
+proc ADD*[Parent: Widget, Child: Widget] (p: Parent, c: Child) =
   when p is Window:
     ((Window)p).setChild(c)
   elif p is Box:
@@ -307,19 +323,18 @@ proc ADD_CHILD*[Parent: Widget, Child: Widget] (p: Parent, c: Child) =
     discard
 
 
-proc gen*(builder: Builder, ui: BuilderWidget, parent = "") =
-  var name = getId(ui.kind)
-
-  if name.len == 0:
+proc gen*(builder: Builder, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget) =
+  if ui.kind == None:
     return
-  #if ui.id.len > 0:
+
+  var name = getId(ui, ids)
 
   case ui.kind
   of UiWindow:
     echo &"""var {name} = newWindow("{ui.name}", {ui.width}, {ui.height}, {builder.hasMenuBar})
 {name}.margined = true
 {name}.onClosing = (proc (): bool = return true)
-show({name})"""
+"""
   of UiBox:
     if ui.orientation == HORIZONTAL:
       echo &"var {name} = newHorizontalBox()"
@@ -358,17 +373,17 @@ show({name})"""
   of UIRadioButtons:
     echo &"var {name} = newRadioButtons()"
   of UiTab:
-    echo &"var {name} = newtab()"
+    echo &"var {name} = newTab()"
   of UiMultilineEntry:
     echo &"var {name} = newMultilineEntry()"
   else:
     discard
 
-  if parent.len > 0:
-    echo &"ADD_CHILD({parent}, {name})"
+  if parent.kind != None:
+    echo genAddStmt(parent, ui)
 
   for child in ui.children:
-    builder.gen(child, name)
+    builder.gen(child, ids, )
 
 proc codegen*(builder: Builder, path: string) =
   var root = loadXml(path)
@@ -376,20 +391,23 @@ proc codegen*(builder: Builder, path: string) =
     raise newException(IOError, "invalid glade file")
 
   echo """import ui, uibuilder
-init()
 """
-
-
+  var ids: seq[string] = @[]
   for node in root.items:
-    if node.tag == "object" and node.attr("class") != "GtkMenuBar":
-      var
-        rootBuilderWidget: BuilderWidget
+    if node.tag == "object":
+      var rootBuilderWidget: BuilderWidget
 
       builder.parseXml(node, rootBuilderWidget)
-      builder.gen(rootBuilderWidget)
-  echo "mainLoop()"
+      builder.gen(rootBuilderWidget, ids)
+
+  if ids.len > 0:
+    echo "\nexport " & ids.join(", ")
 
 when isMainModule:
+  if paramCount() != 1:
+    quit(&"Usage: {paramStr(0)} <glade file>")
+  var path = paramStr(1)
+  if not path.fileExists:
+    quit("Glade file {path} not found")
   var b = newBuilder()
-  var root = ""
-  b.codegen("examples/basic_controls.glade")
+  b.codegen(path)
