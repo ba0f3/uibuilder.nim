@@ -4,7 +4,7 @@ import private/[helpers, types]
 const CHILDREN_SELECTOR = "> child > object"
 
 type
-  Builder = ref object of RootObj
+  Builder* = ref object of RootObj
     widgetById: TableRef[string, Widget]
     adjustmentById: TableRef[string, Adjustment]
     textBufferById: StringTableRef
