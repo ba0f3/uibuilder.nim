@@ -273,21 +273,6 @@ proc makeMenu(menuBar: XmlNode) =
       #if properties.getOrDefault("can_focus", "True") != "True":
       #   menuItem.disable()
 
-
-proc genAddStmt(p, c: BuilderWidget): string =
-  
-  if p of Window:
-    ((Window)p).setChild(c)
-  elif p of Box:
-    if c is Box:
-      ((Box)p).add(c, true)
-    else:
-      ((Box)p).add(c, false)
-  elif p of Group:
-    ((Group)p).child = c
-  else:
-    discard
-
 proc load*(builder: Builder, path: string) =
   init()
   var root = loadXml(path)
@@ -309,21 +294,7 @@ proc load*(builder: Builder, path: string) =
       builder.parseXml(node, rootBuilderWidget)
       builder.build(rootBuilderWidget, rootWidget)
 
-proc ADD*[Parent: Widget, Child: Widget] (p: Parent, c: Child) =
-  when p is Window:
-    ((Window)p).setChild(c)
-  elif p is Box:
-    when c is Box:
-      ((Box)p).add(c, true)
-    else:
-      ((Box)p).add(c, false)
-  elif p is Group:
-    ((Group)p).child = c
-  else:
-    discard
-
-
-proc gen*(builder: Builder, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget) =
+proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget, parentName = "") =
   if ui.kind == None:
     return
 
@@ -331,77 +302,88 @@ proc gen*(builder: Builder, ui: BuilderWidget, ids: var seq[string], parent: Bui
 
   case ui.kind
   of UiWindow:
-    echo &"""var {name} = newWindow("{ui.name}", {ui.width}, {ui.height}, {builder.hasMenuBar})
+    f.write &"""var {name} = newWindow("{ui.name}", {ui.width}, {ui.height}, {builder.hasMenuBar})
 {name}.margined = true
 {name}.onClosing = (proc (): bool = return true)
 """
   of UiBox:
     if ui.orientation == HORIZONTAL:
-      echo &"var {name} = newHorizontalBox()"
+      f.write &"var {name} = newHorizontalBox()\n"
     else:
-      echo &"var {name} = newVerticalBox()"
+      f.write &"var {name} = newVerticalBox()\n"
   of UiGroup:
-    echo &"var {name} = newGroup(\"{ui.groupTitle}\", true)"
+    f.write &"var {name} = newGroup(\"{ui.groupTitle}\", true)\n"
   of UiButton:
-    echo &"var {name} = newButton(\"{ui.buttonText}\")"
+    f.write &"var {name} = newButton(\"{ui.buttonText}\")\n"
   of UICheckbox:
-    echo &"var {name} = newCheckbox(\"{ui.checkboxText}\")"
+    f.write &"var {name} = newCheckbox(\"{ui.checkboxText}\")\n"
   of UIEntry:
-    echo &"var {name} = newEntry(\"{ui.entryText}\")"
+    f.write &"var {name} = newEntry(\"{ui.entryText}\")\n"
   of UILabel:
-    echo &"var {name} = newLabel(\"{ui.label}\")"
+    f.write &"var {name} = newLabel(\"{ui.label}\")\n"
   of UISpinbox:
     var adj: Adjustment
     if ui.adjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.adjustmentId):
       adj = builder.adjustmentById[ui.adjustmentId]
-    echo &"""var {name} = newSpinBox({adj.lower}, {adj.upper})
-{name}.value = {adj.value}"""
+      f.write &"""var {name} = newSpinBox({adj.lower}, {adj.upper})
+{name}.value = {adj.value}
+"""
   of UiProgressBar:
-    echo &"var {name} = newProgressBar()"
+    f.write &"var {name} = newProgressBar()\n"
   of UICombobox:
-    echo &"var {name} = newCombobox()"
+    f.write &"var {name} = newCombobox()\n"
   of UIEditableCombobox:
-    echo &"var {name} = newEditableCombobox()"
+    f.write &"var {name} = newEditableCombobox()\n"
   of UISeparator:
-    echo &"var {name} = newHorizontalSeparator()"
+    f.write &"var {name} = newHorizontalSeparator()\n"
   of UISlider:
     var adj: Adjustment
     if ui.sliderAdjustmentId.len > 0 and builder.adjustmentById.hasKey(ui.sliderAdjustmentId):
       adj = builder.adjustmentById[ui.sliderAdjustmentId]
-    echo &"""var {name} = newSlider({adj.lower}, {adj.upper})
-{name}.value = {adj.value}"""
+      f.write &"""var {name} = newSlider({adj.lower}, {adj.upper})
+{name}.value = {adj.value}
+"""
   of UIRadioButtons:
-    echo &"var {name} = newRadioButtons()"
+    f.write &"var {name} = newRadioButtons()\n"
   of UiTab:
-    echo &"var {name} = newTab()"
+    f.write &"var {name} = newTab()\n"
   of UiMultilineEntry:
-    echo &"var {name} = newMultilineEntry()"
+    f.write &"var {name} = newMultilineEntry()\n"
   else:
     discard
 
-  if parent.kind != None:
-    echo genAddStmt(parent, ui)
+  if parent.kind != None and parentName.len != 0:
+    f.write genAddStmt(parent.kind, parentName, ui.kind, name)
+    f.write "\n"
 
   for child in ui.children:
-    builder.gen(child, ids, )
+    builder.gen(f, child, ids, ui, name)
 
 proc codegen*(builder: Builder, path: string) =
   var root = loadXml(path)
   if root.tag != "interface":
     raise newException(IOError, "invalid glade file")
+  var
+    lastDot = path.rfind('.')
+    outputPath = path
+  outputPath[lastDot..<path.len] = ".nim"
 
-  echo """import ui, uibuilder
-"""
+  var output = open(outputPath, fmWrite)
+  output.write "import ui\n\n"
+
   var ids: seq[string] = @[]
   for node in root.items:
     if node.tag == "object":
-      var rootBuilderWidget: BuilderWidget
+      var
+        rootBuilderWidget: BuilderWidget
 
       builder.parseXml(node, rootBuilderWidget)
-      builder.gen(rootBuilderWidget, ids)
+      builder.gen(output, rootBuilderWidget, ids, rootBuilderWidget)
 
   if ids.len > 0:
-    echo "\nexport " & ids.join(", ")
+    output.write "\nexport " & ids.join(", ")
+
+  output.close()
 
 when isMainModule:
   if paramCount() != 1:
@@ -411,3 +393,4 @@ when isMainModule:
     quit("Glade file {path} not found")
   var b = newBuilder()
   b.codegen(path)
+

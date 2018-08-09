@@ -1,4 +1,4 @@
-import ui, strutils, strtabs, types, xmltree, q, random
+import ui, strutils, strtabs, types, xmltree, q, random, strformat
 
 randomize()
 
@@ -101,3 +101,17 @@ proc getId*(w: BuilderWidget, ids: var seq[string] = @[]): string =
     prefix[0] = prefix[0].toLowerAscii()
     result = prefix & toHex(rand(high(int))).toLowerAscii()
 
+
+proc genAddStmt*(parentKind: WidgetKind, parentName: string, childKind: WidgetKind, childName: string): string =
+  case parentKind
+  of UIWindow:
+    result = fmt"{parentName}.setChild({childName})"
+  of UIBox:
+    if childKind == UIBox:
+      result = fmt"{parentName}.add({childName}, true)"
+    else:
+      result = fmt"{parentName}.add({childName}, false)"
+  of UIGroup:
+    result = fmt"{parentName}.child = {childName}"
+  else:
+    discard
