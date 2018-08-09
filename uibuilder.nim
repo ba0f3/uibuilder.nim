@@ -48,7 +48,9 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   if node.attr("id").len > 0:
     widget.id = node.attr("id")
 
-  if props.hasKey("visbile") and props["visible"] == "True":
+  if props.hasKey("visbile"):
+    widget.visible = props["visible"] == "True"
+  else:
     widget.visible = true
 
   case gtkClass
@@ -352,6 +354,9 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     f.write &"var {name} = newMultilineEntry()\n"
   else:
     discard
+
+  if not ui.visible:
+    f.write &"{name}.hide()\n"
 
   if parent.kind != None and parentName.len != 0:
     f.write genAddStmt(parent.kind, parentName, ui.kind, name)
