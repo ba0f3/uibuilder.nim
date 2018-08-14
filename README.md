@@ -28,7 +28,11 @@ builder.run()
 > Note: only widgets have `id` are exported
 
 ```shell
-$ uibuilder /path/to/glade/file.glade
+$ uibuilder examples/basic_controls.glade
+Nim code saved at: examples/basic_controls.nim
+Run command bellow to see the result:
+
+# nim c -r examples/basic_controls.nim
 ```
 
 
