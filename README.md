@@ -5,6 +5,10 @@ Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
 ### Usage
 > you must have [Glade](https://glade.gnome.org/) installed in order to build UI and create *.glade files
 
+UIBuilder contains a library for load glade file and construct UI on-the-fly, another part - `uibuilder` binary - which generates a Nim module from glade file.
+
+#### Load Glade file
+
 ```nim
 import ui, uibuilder
 
@@ -12,6 +16,17 @@ var builder = newBuilder()
 builder.load("ui.glade")
 builder.run()
 ```
+
+#### Generate Nim module (WIP)
+> the `uibuilder` command will generates a Nim module which can run standalone or importable.
+> the generated module will not requires `uibuilder`, it just need `ui` module
+>
+> Note: only widgets have `id` are exported
+
+```shell
+$ uibuilder /path/to/glade/file.glage
+```
+
 
 ### Widgets
 > Almost widgets are same as GTK Widgets, but there are some widgets need a small hack in order to work
