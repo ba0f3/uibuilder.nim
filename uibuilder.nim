@@ -413,6 +413,11 @@ when isMainModule:
 """
 
   output.close()
+  echo &"""Nim code saved at: {outputPath}
+Run command bellow to see the result:
+
+# nim c -r {outputPath}
+"""
 
 when isMainModule:
   if paramCount() != 1:
