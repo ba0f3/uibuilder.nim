@@ -1,5 +1,5 @@
 import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q, strformat, os
-import private/[helpers, types]
+import uibuilderpkg/[helpers, types]
 
 {.deadCodeElim: on.}
 
