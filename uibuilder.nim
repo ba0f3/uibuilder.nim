@@ -296,11 +296,12 @@ proc load*(builder: Builder, path: string) =
       builder.parseXml(node, rootBuilderWidget)
       builder.build(rootBuilderWidget, rootWidget)
 
-proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget, parentName = "") =
+proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget, parentName = ""): string {.discardable.} =
   if ui.kind == None:
     return
 
   var name = getId(ui, ids)
+  result = name
 
   case ui.kind
   of UiWindow:
@@ -337,6 +338,8 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     f.write &"var {name} = newCombobox()\n"
   of UIEditableCombobox:
     f.write &"var {name} = newEditableCombobox()\n"
+    for item in ui.items:
+      f.write &"{name}.add(\"{item}\")\n"
   of UISeparator:
     f.write &"var {name} = newHorizontalSeparator()\n"
   of UISlider:
@@ -348,10 +351,20 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
 """
   of UIRadioButtons:
     f.write &"var {name} = newRadioButtons()\n"
+    for button in ui.buttons:
+      f.write &"{name}.add(\"{button}\")\n"
   of UiTab:
     f.write &"var {name} = newTab()\n"
+    for i in 0..<ui.labels.len:
+      var panelName = builder.gen(f, ui.children[i], ids, ui, name)
+      f.write &"{name}.add(\"{ui.labels[i]}\", {panelName})\n"
+    return
   of UiMultilineEntry:
-    f.write &"var {name} = newMultilineEntry()\n"
+    if ui.wrapText:
+      f.write &"var {name} = newMultilineEntry()\n"
+    else:
+      f.write &"var {name} = newNonWrappingMultilineEntry()\n"
+    f.write &"{name}.text = \"\"\"{ui.text}\"\"\"\n"
   else:
     discard
 
