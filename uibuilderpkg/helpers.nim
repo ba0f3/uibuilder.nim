@@ -1,4 +1,4 @@
-import ui, strutils, strtabs, types, random, strformat, xml, xml/selector
+import strutils, strtabs, types, random, strformat, xml, xml/selector
 
 randomize()
 
@@ -15,19 +15,6 @@ proc getLabel*(node: XmlNode): string =
 proc getLabel*(node: seq[XmlNode]): string {.inline.} =
   if not node.isNil and node.len > 0:
     result = getLabel(node[0])
-
-proc addChild*[Parent: Widget, Child: Widget](p: Parent, c: Child) =
-  if p of Window:
-    ((Window)p).setChild(c)
-  elif p of Box:
-    if c is Box:
-      ((Box)p).add(c, true)
-    else:
-      ((Box)p).add(c, false)
-  elif p of Group:
-    ((Group)p).child = c
-  else:
-    discard
 
 proc toWidgetKind*(GTKClass: string): WidgetKind =
   case GTKClass
@@ -67,22 +54,6 @@ proc toWidgetKind*(GTKClass: string): WidgetKind =
     result = UiMultilineEntry
   else:
     result = None
-    {.warning: "not supported widget"}
-
-proc makeWindow*(w: BuilderWidget, hasMenuBar: bool): Window =
-  result = newWindow(w.name, w.width, w.height, hasMenuBar)
-  result.margined = true
-  result.onClosing = (proc (): bool = return true)
-  show(result)
-
-proc makeBox*(w: BuilderWidget): Box =
-  var
-    padded = true
-  if w.orientation == VERTICAL:
-    result = newVerticalBox(padded)
-  else:
-    result = newHorizontalBox(padded)
-
 
 proc initUiWidget*(kind: WidgetKind, node: XmlNode): BuilderWidget =
   result.kind = kind
