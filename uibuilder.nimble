@@ -10,5 +10,4 @@ bin           = @["uibuilder"]
 
 requires "nim >= 0.18.1"
 requires "ui >= 0.9.2"
-requires "q >= 0.0.6"
 requires "https://github.com/ba0f3/xml.nim >= 0.1.1"
