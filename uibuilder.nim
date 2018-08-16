@@ -1,5 +1,5 @@
 import ui, os, streams, strutils, tables, strtabs, strformat, os, xml, xml/selector
-import uibuilderpkg/[builder, helpers, uihelpers, types]
+import uibuilderpkg/[builder, helpers, uihelpers, types, uitypes]
 
 type
   Builder* = ref object of BaseBuilder

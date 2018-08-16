@@ -1,4 +1,4 @@
-import ui, strtabs, xml
+import strtabs, xml
 
 type
   Orientation* = enum
@@ -30,10 +30,6 @@ type
     lower*: int
     upper*: int
     value*: int
-
-  TabPanel* = object
-    label*: string
-    widget*: Widget
 
   BuilderWidget* = object
     id*: string

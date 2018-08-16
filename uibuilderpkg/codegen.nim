@@ -1,10 +1,9 @@
-import os, macros, xml
+import macros, xml
 import builder, types
 
 export newBuilder
 
 proc gen(glade: string) {.compileTime.} =
-  echo glade
   var root = parseXml(glade)
   if root.name != "interface":
     raise newException(IOError, "invalid glade file")
