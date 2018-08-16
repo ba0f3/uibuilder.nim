@@ -1,6 +1,7 @@
-import ospaths, uibuilderpkg/codegen
+import ui, ospaths, uibuilderpkg/codegen
 
-#const glade = slurp(joinPath(staticExec("pwd"), "test.glade"))
+
+init()
 const path = joinPath(staticExec("pwd"), "test.glade")
-
 build(path)
+mainLoop()
