@@ -1,4 +1,4 @@
-import ui, strtabs, xmltree
+import ui, strtabs, xml
 
 type
   Orientation* = enum

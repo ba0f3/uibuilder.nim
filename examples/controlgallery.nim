@@ -1,9 +1,10 @@
 import ui, ../uibuilder, random, posix
+from os import getAppDir
 
 randomize()
 
 var builder = newBuilder()
-builder.load("basic_controls.glade")
+builder.load(getAppDir() & "/basic_controls.glade")
 
 var
   button = (Button)builder.getWidgetById("button1")

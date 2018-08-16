@@ -1,16 +1,16 @@
-import ui, strutils, strtabs, types, xmltree, q, random, strformat
+import ui, strutils, strtabs, types, random, strformat, xml, xml/selector
 
 randomize()
 
 proc getProperties*(node: XmlNode): StringTableRef =
   result = newStringTable(modeCaseInsensitive)
   for prop in node.select("> property"):
-    result[prop.attr("name")] = prop.innerText
+    result[prop.attr("name")] = prop.text
 
 proc getLabel*(node: XmlNode): string =
   for prop in node.select("> property"):
     if prop.attr("name") == "label":
-      result = prop.innerText
+      result = prop.text
 
 proc getLabel*(node: seq[XmlNode]): string {.inline.} =
   if not node.isNil and node.len > 0:

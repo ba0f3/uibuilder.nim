@@ -1,4 +1,4 @@
-import ui, os, streams, xmlparser, xmltree, strutils, tables, strtabs, q, strformat, os
+import ui, os, streams, strutils, tables, strtabs, strformat, os, xml, xml/selector
 import uibuilderpkg/[helpers, types]
 
 {.deadCodeElim: on.}
@@ -44,7 +44,6 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
       kind = UiRadioButtons
 
   var widget = initUiWidget(kind, node)
-
   if node.attr("id").len > 0:
     widget.id = node.attr("id")
 
@@ -65,6 +64,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
     builder.adjustmentById[widget.id] = adj
     return
   of "GtkTextBuffer":
+    echo widget.id , " ", props.getOrDefault("text")
     builder.textBufferById[widget.id] = props.getOrDefault("text", "")
     return
   else:
@@ -109,7 +109,7 @@ proc parseXml(builder: Builder, node: XmlNode, parent: var BuilderWidget, level 
   of UiEditableCombobox:
     widget.items = @[]
     for item in node.select("item"):
-      widget.items.add(item.innerText)
+      widget.items.add(item.text)
   of UiRadioButtons:
     widget.buttons = @[]
     children = node.select("> child > object.GtkRadioButton")
@@ -277,24 +277,26 @@ proc makeMenu(menuBar: XmlNode) =
 
 proc load*(builder: Builder, path: string) =
   init()
-  var root = loadXml(path)
-  if root.tag != "interface":
+  var root = parseXml(readFile(path))
+  if root.name != "interface":
     raise newException(IOError, "invalid glade file")
 
   # search for GtkMenuBar and init it first
-  for node in root.items:
-    if node.tag == "object" and node.attr("class") == "GtkMenuBar":
-      builder.hasMenuBar = true
-      makeMenu(node)
+  if not root.children.isNil:
+    for node in root.children:
+        if node.name == "object" and node.attr("class") == "GtkMenuBar":
+          builder.hasMenuBar = true
+          makeMenu(node)
 
-  for node in root.items:
-    if node.tag == "object" and node.attr("class") != "GtkMenuBar":
-      var
-        rootBuilderWidget: BuilderWidget
-        rootWidget: Widget
+  if not root.children.isNil:
+    for node in root.children:
+      if node.name == "object" and node.attr("class") != "GtkMenuBar":
+        var
+          rootBuilderWidget: BuilderWidget
+          rootWidget: Widget
 
-      builder.parseXml(node, rootBuilderWidget)
-      builder.build(rootBuilderWidget, rootWidget)
+        builder.parseXml(node, rootBuilderWidget)
+        builder.build(rootBuilderWidget, rootWidget)
 
 proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget, parentName = ""): string {.discardable.} =
   if ui.kind == None:
@@ -379,8 +381,8 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     builder.gen(f, child, ids, ui, name)
 
 proc codegen*(builder: Builder, path: string) =
-  var root = loadXml(path)
-  if root.tag != "interface":
+  var root = parseXml(readFile(path))
+  if root.name != "interface":
     raise newException(IOError, "invalid glade file")
   var
     lastDot = path.rfind('.')
@@ -394,13 +396,13 @@ when isMainModule:
 """
 
   var ids: seq[string] = @[]
-  for node in root.items:
-    if node.tag == "object":
-      var
-        rootBuilderWidget: BuilderWidget
+  if not root.children.isNil:
+    for node in root.children:
+      if node.name == "object":
+        var rootBuilderWidget: BuilderWidget
 
-      builder.parseXml(node, rootBuilderWidget)
-      builder.gen(output, rootBuilderWidget, ids, rootBuilderWidget)
+        builder.parseXml(node, rootBuilderWidget)
+        builder.gen(output, rootBuilderWidget, ids, rootBuilderWidget)
 
   if ids.len > 0:
     output.write "\nexport " & ids.join(", ")
