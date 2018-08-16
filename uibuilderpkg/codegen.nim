@@ -3,7 +3,12 @@ import builder, types
 
 export newBuilder
 
-proc gen(glade: string) {.compileTime.} =
+proc gen(p: NimNode) {.compileTime.} =
+  var root: XmlNode
+
+
+  return
+discard """
   var root = parseXml(glade)
   if root.name != "interface":
     raise newException(IOError, "invalid glade file")
@@ -20,11 +25,18 @@ proc gen(glade: string) {.compileTime.} =
       if node.name == "object" and node.attr("class") != "GtkMenuBar":
         var rootBuilderWidget: BuilderWidget
         builder.parseXml(node, rootBuilderWidget)
-
-macro a(xml: string): typed =
-  gen(xml.strVal)
+"""
 
 
-template build*(glade: string): typed =
-  echo glade
-  a(glade)
+macro build*(x: string): typed =
+  echo "calling parse on: ", x
+  result = newStmtList()
+  result.add(newAssignment(
+    newDotExpr(ident("parseXml"), x),
+    ident("root")
+  )
+  )
+
+
+
+
