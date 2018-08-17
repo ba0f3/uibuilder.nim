@@ -11,7 +11,25 @@ $ nimble install uibuilder
 
 UIBuilder contains a library for load glade file and construct UI on-the-fly, another part - `uibuilder` binary - which generates a Nim module from glade file.
 
-#### Load Glade file
+#### Construct UI at compile-time
+This method is prefered:
+- Glade file compiled into AST at compile-time
+- No more glade files in your distribution package
+- Output module wont depends on UIBuilder
+- Binary size reduced 50%
+
+
+```nim
+import ui, ospaths, uibuilderpkg/codegen
+
+const path = joinPath(staticExec("pwd"), "test.glade")
+
+init()
+build(path)
+mainLoop()
+```
+
+#### Load Glade on run-ime file
 
 ```nim
 import ui, uibuilder
@@ -56,5 +74,5 @@ You can defined ajustment for `Slider` and `SpinBox` with `GtkAdjustment`
 
 ### Todos
 - [ ] Better event handling
-- [ ] Code generator for static layout
+- [x] Code generator for static layout
 - [ ] Support QT Designer layout file
