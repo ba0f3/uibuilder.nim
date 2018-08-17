@@ -72,7 +72,8 @@ proc getId*(w: BuilderWidget, ids: var seq[string]): string =
     prefix[0] = prefix[0].toLowerAscii()
     result = prefix & toHex(rand(high(int))).toLowerAscii()
 
-proc getId*(w: BuilderWidget): string =
+proc getIdStatic*(w: BuilderWidget): string =
+  randomize(staticExec("date +'%N'").parseint)
   if w.id.len > 0:
     result = w.id
   else:

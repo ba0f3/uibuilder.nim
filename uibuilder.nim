@@ -231,7 +231,6 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     for i in 0..<ui.labels.len:
       var panelName = builder.gen(f, ui.children[i], ids, ui, name)
       f.write &"{name}.add(\"{ui.labels[i]}\", {panelName})\n"
-    return
   of UiMultilineEntry:
     if ui.wrapText:
       f.write &"var {name} = newMultilineEntry()\n"
@@ -248,8 +247,9 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     f.write genAddStmt(parent.kind, parentName, ui.kind, name)
     f.write "\n"
 
-  for child in ui.children:
-    builder.gen(f, child, ids, ui, name)
+  if widget.kind != UiTab:
+    for child in ui.children:
+      builder.gen(f, child, ids, ui, name)
 
 proc codegen*(builder: Builder, path: string) =
   var root = parseXml(readFile(path))
