@@ -60,10 +60,21 @@ proc initUiWidget*(kind: WidgetKind, node: XmlNode): BuilderWidget =
   result.children = @[]
   result.node = node
 
-proc getId*(w: BuilderWidget, ids: var seq[string] = @[]): string =
+proc getId*(w: BuilderWidget, ids: var seq[string]): string =
   if w.id.len > 0:
     result = w.id
     ids.add(result)
+  else:
+    var kindStr = $w.kind
+    if w.kind == None:
+      return ""
+    var prefix = kindStr[2..<kindStr.len]
+    prefix[0] = prefix[0].toLowerAscii()
+    result = prefix & toHex(rand(high(int))).toLowerAscii()
+
+proc getId*(w: BuilderWidget): string =
+  if w.id.len > 0:
+    result = w.id
   else:
     var kindStr = $w.kind
     if w.kind == None:
