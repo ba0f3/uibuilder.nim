@@ -9,7 +9,7 @@ type
     textBufferById*: StringTableRef
     hasMenuBar*: bool
 
-proc newBuilder*(): BaseBuilder =
+proc newBaseBuilder*(): BaseBuilder =
   new result
   result.adjustmentById = newTable[string, Adjustment]()
   result.textBufferById = newStringTable()

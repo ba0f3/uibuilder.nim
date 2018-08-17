@@ -151,7 +151,7 @@ macro build*(path: static[string]): typed =
   if root.name != "interface":
     raise newException(IOError, "invalid glade file")
 
-  var builder = newBuilder()
+  var builder = newBaseBuilder()
 
   if not root.children.isNil:
     for child in root.children:

@@ -247,7 +247,7 @@ proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], pa
     f.write genAddStmt(parent.kind, parentName, ui.kind, name)
     f.write "\n"
 
-  if widget.kind != UiTab:
+  if ui.kind != UiTab:
     for child in ui.children:
       builder.gen(f, child, ids, ui, name)
 
@@ -293,11 +293,21 @@ Run command bellow to see the result:
 """
 
 when isMainModule:
-  if paramCount() != 1:
-    quit(&"Usage: {paramStr(0)} <glade file>")
-  var path = paramStr(1)
-  if not path.fileExists:
-    quit("Glade file {path} not found")
-  var b = newBuilder()
-  b.codegen(path)
+  if paramCount() < 1 or paramCount() > 2:
+    quit(&"Usage: {paramStr(0)} -c <glade file>")
+
+  if paramCount() == 1:
+    var path = paramStr(1)
+    if not path.fileExists:
+      quit("Glade file {path} not found")
+    var b = newBuilder()
+    b.load(path)
+    b.run()
+  if paramCount() == 2 and paramStr(1) == "-c":
+    var path = paramStr(2)
+    if not path.fileExists:
+      quit("Glade file {path} not found")
+    var b = newBuilder()
+    b.codegen(path)
+
 
