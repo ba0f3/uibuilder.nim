@@ -1,5 +1,6 @@
 # uibuilder.nim
 UI Builder for [@nim-lang/ui](https://github.com/nim-lang/ui) using [Glade](https://glade.gnome.org/)
+
 Checkout [examples](https://github.com/ba0f3/uibuilder.nim/tree/master/examples)
 
 ### Usage
@@ -53,6 +54,8 @@ Run command bellow to see the result:
 # nim c -r examples/basic_controls.nim
 ```
 
+### Showcases:
+- [Nimble GUI](https://github.com/ThomasTJdev/nim_nimble_gui)
 
 ### Widgets
 > Almost widgets are same as GTK Widgets, but there are some widgets need a small hack in order to work
