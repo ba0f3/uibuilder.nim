@@ -1,9 +1,39 @@
-import macros, xml, tables
+import macros, tables, strtabs, strformat, xml, xml/selector
 import builder, types, helpers
 
 
-proc makeMenu(node: XmlNode): NimNode {.compileTime.} =
-  result = newStmtList()
+proc makeMenu(stmtList: NimNode, node: XmlNode) {.compileTime.} =
+  for m in node.select("> child > object.GtkMenuItem"):
+    var props = m.getProperties()
+
+    var
+      menuName = props.getOrDefault("id", "")
+      menuLabel = props.getOrDefault("label", "")
+
+    if menuName.len == 0:
+      menuName = genIdStatic("menu")
+    stmtList.add(newVarStmt(ident(menuName), newCall(ident("newMenu"), newStrLitNode(menuLabel))))
+
+    if props.getOrDefault("visible", "True") != "True":
+      stmtList.add(newCall(ident("hide"), ident(menuName)))
+
+
+    for item in m.select("> child > object.GtkMenu > child > object"):
+      props = item.getProperties()
+      var
+        menuItemName = props.getOrDefault("id", "")
+        menuItemLabel = props.getOrDefault("label", "")
+      if menuItemName.len == 0:
+        menuItemName = genIdStatic("menuitem")
+      case item.attr("class")
+      of "GtkMenuItem":
+        stmtList.add parseStmt(fmt"var {menuItemName} = {menuName}.addItem(""{menuItemLabel}"", proc() = discard)")
+      of "GtkCheckMenuItem":
+        stmtList.add parseStmt(fmt"var {menuItemName} = {menuName}.addCheckItem(""{menuItemLabel}"", proc() = discard)")
+
+      if props.getOrDefault("visible", "True") != "True":
+        stmtList.add(newCall(ident("hide"), ident(menuItemName)))
+
 
 proc gen(builder: BaseBuilder, stmtList: NimNode, widget: BuilderWidget, parent: BuilderWidget, parentName = ""): string {.compileTime.} =
 
@@ -157,7 +187,7 @@ macro build*(path: static[string]): typed =
     for child in root.children:
       if child.name == "object" and child.attr("class") == "GtkMenuBar":
         builder.hasMenuBar = true
-        result.add makeMenu(child)
+        makeMenu(result, child)
 
     for child in root.children:
       if child.name == "object" and child.attr("class") != "GtkMenuBar":

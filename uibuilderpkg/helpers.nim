@@ -72,6 +72,11 @@ proc getId*(w: BuilderWidget, ids: var seq[string]): string =
     prefix[0] = prefix[0].toLowerAscii()
     result = prefix & toHex(rand(high(int))).toLowerAscii()
 
+proc genIdStatic*(prefix: string): string =
+  randomize(staticExec("date +'%N'").parseint)
+  result = prefix & toHex(rand(high(int))).toLowerAscii()
+
+
 proc getIdStatic*(w: BuilderWidget): string =
   randomize(staticExec("date +'%N'").parseint)
   if w.id.len > 0:
@@ -82,7 +87,7 @@ proc getIdStatic*(w: BuilderWidget): string =
       return ""
     var prefix = kindStr[2..<kindStr.len]
     prefix[0] = prefix[0].toLowerAscii()
-    result = prefix & toHex(rand(high(int))).toLowerAscii()
+    result = genIdStatic(prefix)
 
 
 proc genAddStmt*(parentKind: WidgetKind, parentName: string, childKind: WidgetKind, childName: string): string =
