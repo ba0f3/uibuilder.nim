@@ -127,9 +127,8 @@ proc parseXml*(builder: BaseBuilder, node: XmlNode, parent: var BuilderWidget, l
         discard
 
   # process children
-  if not children.isNil:
-    for child in children:
-      builder.parseXml(child, widget, level+1)
+  for child in children:
+     builder.parseXml(child, widget, level+1)
 
   # link with its parent
   if parent.kind == None:

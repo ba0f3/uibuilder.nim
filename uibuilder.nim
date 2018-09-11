@@ -153,21 +153,19 @@ proc load*(builder: Builder, path: string) =
     raise newException(IOError, "invalid glade file")
 
   # search for GtkMenuBar and init it first
-  if not root.children.isNil:
-    for node in root.children:
-        if node.name == "object" and node.attr("class") == "GtkMenuBar":
-          builder.hasMenuBar = true
-          makeMenu(node)
+  for node in root.children:
+    if node.name == "object" and node.attr("class") == "GtkMenuBar":
+      builder.hasMenuBar = true
+      makeMenu(node)
 
-  if not root.children.isNil:
-    for node in root.children:
-      if node.name == "object" and node.attr("class") != "GtkMenuBar":
-        var
-          rootBuilderWidget: BuilderWidget
-          rootWidget: Widget
+  for node in root.children:
+    if node.name == "object" and node.attr("class") != "GtkMenuBar":
+      var
+        rootBuilderWidget: BuilderWidget
+        rootWidget: Widget
 
-        builder.parseXml(node, rootBuilderWidget)
-        builder.build(rootBuilderWidget, rootWidget)
+      builder.parseXml(node, rootBuilderWidget)
+      builder.build(rootBuilderWidget, rootWidget)
 
 proc gen*(builder: Builder, f: File, ui: BuilderWidget, ids: var seq[string], parent: BuilderWidget, parentName = ""): string {.discardable.} =
   if ui.kind == None:
@@ -267,13 +265,12 @@ when isMainModule:
 """
 
   var ids: seq[string] = @[]
-  if not root.children.isNil:
-    for node in root.children:
-      if node.name == "object":
-        var rootBuilderWidget: BuilderWidget
+  for node in root.children:
+    if node.name == "object":
+      var rootBuilderWidget: BuilderWidget
 
-        builder.parseXml(node, rootBuilderWidget)
-        builder.gen(output, rootBuilderWidget, ids, rootBuilderWidget)
+      builder.parseXml(node, rootBuilderWidget)
+      builder.gen(output, rootBuilderWidget, ids, rootBuilderWidget)
 
   if ids.len > 0:
     output.write "\nexport " & ids.join(", ")

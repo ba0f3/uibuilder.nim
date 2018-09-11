@@ -13,7 +13,7 @@ proc getLabel*(node: XmlNode): string =
       result = prop.text
 
 proc getLabel*(node: seq[XmlNode]): string {.inline.} =
-  if not node.isNil and node.len > 0:
+  if node.len > 0  and node.len > 0:
     result = getLabel(node[0])
 
 proc toWidgetKind*(GTKClass: string): WidgetKind =

@@ -183,17 +183,16 @@ macro build*(path: static[string]): typed =
 
   var builder = newBaseBuilder()
 
-  if not root.children.isNil:
-    for child in root.children:
-      if child.name == "object" and child.attr("class") == "GtkMenuBar":
-        builder.hasMenuBar = true
-        makeMenu(result, child)
+  for child in root.children:
+    if child.name == "object" and child.attr("class") == "GtkMenuBar":
+      builder.hasMenuBar = true
+      makeMenu(result, child)
 
-    for child in root.children:
-      if child.name == "object" and child.attr("class") != "GtkMenuBar":
-        var
-          widget: BuilderWidget
-        builder.parseXml(child, widget)
-        discard builder.gen(result, widget, widget)
+  for child in root.children:
+    if child.name == "object" and child.attr("class") != "GtkMenuBar":
+      var
+        widget: BuilderWidget
+      builder.parseXml(child, widget)
+      discard builder.gen(result, widget, widget)
 
 

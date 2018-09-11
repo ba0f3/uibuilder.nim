@@ -170,6 +170,7 @@ From Vietnam with love &lt;3</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <signal name="clicked" handler="onclick" object="entry1" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -302,6 +303,7 @@ From Vietnam with love &lt;3</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment1</property>
                                 <property name="round_digits">1</property>
+                                <signal name="change-value" handler="onchange" object="spinbox1" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
